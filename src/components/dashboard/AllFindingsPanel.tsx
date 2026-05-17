@@ -86,7 +86,7 @@ export function AllFindingsPanel({
           </h3>
           <ul className="mt-3 space-y-3">
             {group.items.map((finding) => (
-              <li key={finding.id}>
+              <li key={finding.id} id={`finding-${finding.id}`} className="scroll-mt-24">
                 <Card className="gap-0 border border-border py-0 shadow-sm">
                   <CardContent className="space-y-0 p-4">
                 <div className="flex flex-wrap items-center gap-2">

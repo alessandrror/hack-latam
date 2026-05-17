@@ -67,7 +67,8 @@ export function RiskColumn({
           {risks.map((finding) => (
             <li
               key={finding.id}
-              className="rounded-xl border border-border bg-muted/30 p-4"
+              id={`finding-${finding.id}`}
+              className="scroll-mt-24 rounded-xl border border-border bg-muted/30 p-4"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span

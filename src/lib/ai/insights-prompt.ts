@@ -5,13 +5,9 @@ import type {
   AiInsightsTopAction,
   AiInsightsConfidence,
 } from "@/types/ai-insights";
+import { DEFENSIVE_ADVISOR_RULES, getScanModeContextBlock } from "./defensive-rules";
 
-const SYSTEM_PROMPT = `You are a defensive security advisor for SMB asset owners evaluating passive reconnaissance results.
-
-Rules:
-- Only provide defensive remediation and verification steps. Never exploitation, intrusion, phishing, harassment, bypass, or unauthorized access instructions.
-- Never claim completeness: these checks are passive and may miss assets or mis-state risk.
-- Output MUST be valid JSON only, no markdown fences, no commentary before or after the JSON object.
+const INSIGHTS_JSON_SHAPE = `Output MUST be valid JSON only, no markdown fences, no commentary before or after the JSON object.
 - Use the finding ids exactly as provided in input for keys in perFindingInsightsById and relatedFindingIds.
 - For checklistRowInsightsById use these keys when relevant: check-spf, check-dmarc, check-dkim, check-caa, check-cert, check-tls-versions (omit unknown keys).
 
@@ -49,20 +45,10 @@ ${JSON.stringify(payload)}`;
 export function getInsightsSystemPrompt(
   scanMode: "deep" | "quick" = "deep",
 ): string {
-  const modeBlock =
-    scanMode === "quick"
-      ? `
+  return `${DEFENSIVE_ADVISOR_RULES}
+${getScanModeContextBlock(scanMode)}
 
-Scan mode context (must influence executiveSummary tone):
-- This was a QUICK scan: certificate transparency subdomain enumeration was skipped on the server, low-severity findings were omitted, and checklist detail may be absent.
-- Do not imply full attack-surface or subdomain coverage. You may say the snapshot is a faster, priority-focused pass.`
-      : `
-
-Scan mode context (must influence executiveSummary tone):
-- This was a DEEP scan: all passive modules ran and the full checklist/low-severity signal may be present unless modules failed.
-- You may describe this as a broader audit-style passive snapshot (still not exhaustive).`;
-
-  return SYSTEM_PROMPT + modeBlock;
+${INSIGHTS_JSON_SHAPE}`;
 }
 
 function isSeverityLike(
