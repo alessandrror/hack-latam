@@ -10,6 +10,10 @@
 
 import type * as aiInsightsCache from "../aiInsightsCache.js";
 import type * as scans from "../scans.js";
+import type * as verifiedDomains from "../verifiedDomains.js";
+import type * as verifiedDomainsActions from "../verifiedDomainsActions.js";
+import type * as verifiedDomainsInternal from "../verifiedDomainsInternal.js";
+import type * as verifyCheckImpl from "../verifyCheckImpl.js";
 
 import type {
   ApiFromModules,
@@ -20,6 +24,10 @@ import type {
 declare const fullApi: ApiFromModules<{
   aiInsightsCache: typeof aiInsightsCache;
   scans: typeof scans;
+  verifiedDomains: typeof verifiedDomains;
+  verifiedDomainsActions: typeof verifiedDomainsActions;
+  verifiedDomainsInternal: typeof verifiedDomainsInternal;
+  verifyCheckImpl: typeof verifyCheckImpl;
 }>;
 
 /**

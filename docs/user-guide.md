@@ -69,6 +69,20 @@ Each finding includes:
 
 The app is designed for **defense / resilience**: it uses **public datasets, DNS lookups, and a normal HTTPS handshake** on your target — not exploitation. Details: [Threat model](threat-model.md) and [Privacy & data sources](privacy-and-data-sources.md).
 
+## AI insights and follow-up chat
+
+After a scan completes, open the **IA** tab:
+
+1. Click **Generar** to produce a structured summary (executive summary, suggested actions, disclaimers).
+2. Once generation succeeds, use **Refinar con preguntas** below the report:
+   - Suggested chips (e.g. explain critical findings, what to verify first, DNS handoff bullets).
+   - Free-text questions about **this scan only** (remediation, verification, prioritization).
+3. **Sign in** is required for follow-up chat. Without an account you can still run scans and generate structured insights if configured.
+
+The chat does **not** replace the structured report — it clarifies and helps you act on the same snapshot. Conversation is stored in your browser session (`sessionStorage`) until you close the tab or start a new scan on another target.
+
+See [API reference — `POST /api/ai/chat`](api-reference.md#post-apiaichat) and [AI chat PRD](ai-chat-refinement-prd.md).
+
 ## Limitations you should know
 
 - **Not every asset** appears in public cert logs; **zero subdomains** in crt.sh does not guarantee you have none.
