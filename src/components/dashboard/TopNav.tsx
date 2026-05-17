@@ -32,7 +32,7 @@ export function TopNav({
               Hack LATAM
             </p>
             <p className="truncate text-sm font-medium text-foreground">
-              Attack surface dashboard
+              Panel de huella pasiva
             </p>
           </div>
         </div>
@@ -42,14 +42,14 @@ export function TopNav({
           className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-2"
         >
           <label htmlFor={inputId} className="sr-only">
-            Target domain or URL
+            Dominio o URL
           </label>
           <Input
             id={inputId}
             name="target"
             value={target}
             onChange={(e) => onTargetChange(e.target.value)}
-            placeholder="Domain or URL"
+            placeholder="example.com o URL"
             className="min-h-10 min-w-0 flex-1 rounded-lg border-input bg-background px-3 py-2 font-mono text-sm"
             autoComplete="off"
             disabled={loading}
@@ -60,7 +60,7 @@ export function TopNav({
               disabled={loading || !target.trim()}
               className="min-h-10 cursor-pointer"
             >
-              {loading ? "Scanning…" : "Scan"}
+              {loading ? "Analizando…" : "Analizar"}
             </Button>
             {onNewScan ? (
               <Button
@@ -69,7 +69,7 @@ export function TopNav({
                 onClick={onNewScan}
                 className="min-h-10"
               >
-                New scan
+                Nuevo análisis
               </Button>
             ) : null}
           </div>

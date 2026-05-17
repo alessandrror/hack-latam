@@ -16,7 +16,7 @@ export function ScanLoadingSkeleton({
       {showHeading ? (
         <>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Escaneando
+            Analizando (pasivo)
           </p>
           <p className="mt-3 font-mono text-sm font-medium break-all text-foreground">
             {domainLabel?.trim() || "—"}
@@ -29,8 +29,8 @@ export function ScanLoadingSkeleton({
             <div className="h-20 motion-safe:animate-pulse rounded-lg bg-muted" />
           </div>
           <p className="mt-6 text-xs text-muted-foreground">
-            Tus resultados aparecerán en las pestañas Activos, Hallazgos,
-            Checklist e IA cuando termine la pasada pasiva.
+            Cuando termine la solicitud pasiva aparecerán resultados en Activos,
+            Hallazgos, Checklist y (si los generas) IA.
           </p>
         </>
       ) : (
@@ -42,7 +42,7 @@ export function ScanLoadingSkeleton({
           </div>
           <div className="mt-6 h-32 motion-safe:animate-pulse rounded-lg bg-muted" />
           <p className="mt-4 text-xs text-muted-foreground">
-            Esperando reconocimiento pasivo sobre el objetivo anterior…
+            Esperando el último resultado pasivo del dominio que enviaste…
           </p>
         </>
       )}

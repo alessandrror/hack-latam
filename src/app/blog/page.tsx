@@ -8,7 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata = {
   title: "Blog — Hack LATAM",
-  description: "Fallos de seguridad típicos y recomendaciones para PYMEs",
+  description:
+    "Patrones típicos en escaneos pasivos defensivos y pasos prácticos para PYMEs (sin jargon innecesario).",
 };
 
 export default function BlogPage() {
@@ -23,8 +24,8 @@ export default function BlogPage() {
           Blog de ciberseguridad
         </h1>
         <p className="mt-4 text-muted-foreground">
-          Problemas frecuentes detectados en escaneos pasivos y pasos concretos
-          para remediarlos.
+          Señales que suelen aparecer cuando miras huella DNS y HTTPS en público —
+          qué significan y qué hacer después.
         </p>
         <ul className="mt-12 space-y-6">
           {BLOG_POSTS.map((post) => (

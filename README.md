@@ -1,6 +1,6 @@
-# Hack LATAM — Attack Surface Dashboard
+# Hack LATAM — Passive SMB attack-surface dashboard
 
-A small web app for **PYMEs / SMBs without a security team**: enter a domain or URL and get a **passive** recon report in plain language. Built for a hackathon **defense / acceleration** track — resilience, not offensive tooling.
+Small web app for **PYMEs / SMBs without a security team**: enter a domain you are allowed to assess and receive a **passive, plain-language** snapshot of public signals (not a pen test or “real-time threat” feed). Built for a **def/acc** hackathon track — **defensive resilience**, not offensive tooling.
 
 ## Quick start
 
@@ -41,10 +41,10 @@ Scans use **public data, DNS lookups, and a normal HTTPS handshake on port 443**
 
 ## Limitations today
 
-- **Implemented:** certificate transparency subdomain names (`subdomain_enum`), passive DNS email-auth snapshots (`dns_health`), and **`443`** TLS certificate inspection (`tls_check`). See [docs/recon-modules.md](docs/recon-modules.md).
-- **Roadmap** (CONTEXT / init / recon-modules): richer inputs (company name resolution, IP ranges), Shodan, SSL Labs–style grading, WHOIS/HIBP, streaming UI — not all wired here yet.
+- **Implemented modules:** see [docs/recon-modules.md](docs/recon-modules.md) and [`src/lib/recon/run-scan.ts`](src/lib/recon/run-scan.ts) (certificate transparency footprints, SPF/DMARC/DKIM hints, TLS on port **443**, deep-mode extras such as legacy TLS probes, SPF/DMARC policy detail, CAA).
+- **Roadmap** (CONTEXT / init / recon-modules): richer inputs (company-name resolution, IP ranges), Shodan, SSL Labs–style grading, WHOIS/HIBP, streaming UI — not all wired here yet.
 - **Streaming** UI / partial SSE updates are **not** implemented — one JSON response per `POST /api/scan`.
-- **No `.env.example` yet** — current modules use public crt.sh, system DNS, and outbound TLS only.
+- Optional **AI insights** use OpenRouter; copy `.env.example` to `.env.local` for `OPENROUTER_API_KEY` if you enable that route.
 
 ## Documentation
 

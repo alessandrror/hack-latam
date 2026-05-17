@@ -19,7 +19,8 @@ export function BlogPreviewSection() {
             Fallos típicos y cómo mitigarlos
           </h2>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-            Guías breves sobre los hallazgos que más vemos en escaneos pasivos.
+            Guías cortas ligadas a señales que ya son visibles públicamente cuando
+            miras huella DNS y HTTPS.
           </p>
         </div>
         <Link

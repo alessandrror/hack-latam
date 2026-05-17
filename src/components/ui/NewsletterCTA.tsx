@@ -30,11 +30,12 @@ export function NewsletterCTA({ id = "newsletter" }: { id?: string }) {
             Newsletter semanal
           </p>
           <h2 className="mt-3 text-2xl font-bold text-foreground sm:text-3xl">
-            Ciberseguridad en tu bandeja cada semana
+            Resiliencia práctica cada semana
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-            Brechas recientes, parches críticos y guías prácticas para PYMEs —
-            sin tecnicismos innecesarios. Únete a la comunidad Hack LATAM.
+            Alertas sobre parches, patrones típicos de configuración débil en
+            dominios públicos y pasos útiles para equipos PYME sin CISO —
+            comunidad Hack LATAM.
           </p>
         </div>
         {sent ? (
@@ -42,7 +43,7 @@ export function NewsletterCTA({ id = "newsletter" }: { id?: string }) {
             className="mt-6 text-center text-sm font-medium text-accent"
             role="status"
           >
-            ¡Gracias! Te avisaremos cuando el envío semanal esté activo.
+            Gracias. Te avisaremos cuando el envío semanal esté activo.
           </p>
         ) : (
           <form

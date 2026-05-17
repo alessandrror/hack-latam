@@ -20,6 +20,21 @@ function severityBadgeClasses(severity: Severity): string {
   }
 }
 
+function severityLabelEs(severity: Severity): string {
+  switch (severity) {
+    case "critical":
+      return "crítico";
+    case "medium":
+      return "medio";
+    case "low":
+      return "bajo";
+    default: {
+      const _e: never = severity;
+      return _e;
+    }
+  }
+}
+
 type RiskColumnProps = {
   findings: ScanFinding[];
   perFindingInsightsById?: Record<string, AiPerFindingInsight> | null;
@@ -43,8 +58,8 @@ export function RiskColumn({
 
       {risks.length === 0 ? (
         <p className="mt-4 rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-          No critical or medium findings for this scan. Review the checklist and
-          hostnames for context.
+          Sin hallazgos críticos ni medios en esta pasada. Revisa checklist y lista
+          de hostnames públicos como contexto.
         </p>
       ) : (
         <ul className="mt-4 space-y-3">
@@ -59,7 +74,7 @@ export function RiskColumn({
                     finding.severity,
                   )}`}
                 >
-                  {finding.severity}
+                  {severityLabelEs(finding.severity)}
                 </span>
                 <span className="font-mono text-xs text-muted-foreground">
                   {finding.module}

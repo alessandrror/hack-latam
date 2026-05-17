@@ -11,9 +11,9 @@ export type Feature = {
 export const FEATURES: Feature[] = [
   {
     id: "subdomain_enum",
-    title: "Mapeo en tiempo real",
+    title: "Huellas públicas (transparencia de certificados)",
     description:
-      "Descubre subdominios visibles en registros públicos de transparencia de certificados (crt.sh).",
+      "Lista hostnames aparecidos en logs públicos CT (crt.sh) — visibilidad, no garantía de inventario.",
     status: "live",
     icon: "radar",
   },
@@ -29,7 +29,7 @@ export const FEATURES: Feature[] = [
     id: "tls_check",
     title: "Inspección TLS en :443",
     description:
-      "Lee el certificado HTTPS del objetivo: vencimiento, emisor y coincidencia de nombres.",
+      "Lee el certificado HTTPS del dominio en :443: vencimiento, emisor y coincidencia de nombres.",
     status: "live",
     icon: "lock",
   },
@@ -37,7 +37,7 @@ export const FEATURES: Feature[] = [
     id: "ai_insights",
     title: "Insights con IA",
     description:
-      "Resumen ejecutivo y acciones priorizadas en lenguaje claro, generados bajo demanda.",
+      "Resumen ejecutivo y pasos para verificar o remediar, con advertencias claras sobre límites del escaneo.",
     status: "live",
     icon: "ai",
   },

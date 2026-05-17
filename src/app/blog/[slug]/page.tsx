@@ -89,7 +89,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               "inline-flex min-h-12 rounded-xl px-6 text-sm",
             )}
           >
-            Probar con un escaneo →
+            Ejecutar análisis pasivo →
           </Link>
         </div>
 

@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hack LATAM — Cyber Twin Protocol",
+  title: "Hack LATAM — Superficie externa pasiva para PYMEs",
   description:
-    "Reconocimiento pasivo de superficie de ataque para PYMEs. Detección de amenazas, blog y newsletter de ciberseguridad.",
+    "Comprueba en segundos qué se ve en público sobre tu dominio (transparencia de certificados, correo DNS, HTTPS). Sin explotación. Blog y guías orientadas a defensa.",
 };
 
 export default function RootLayout({

@@ -15,8 +15,8 @@ export function FeaturesSection() {
           Funcionalidades actuales y roadmap
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground">
-          Módulos pasivos que ya corren en el escáner y capacidades planeadas para
-          la próxima iteración del hackathon.
+          Comprobaciones defensivas que ya ejecuta el servidor (sin ataques ni
+          explotación) y lo que sigue en el roadmap del hackathon.
         </p>
       </div>
       <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

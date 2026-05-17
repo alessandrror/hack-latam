@@ -43,7 +43,7 @@ export function SiteHeader() {
               Hack LATAM
             </span>
             <span className="text-sm font-medium text-foreground">
-              Cyber Twin Protocol
+              Superficie externa pasiva
             </span>
           </span>
         </Link>
@@ -69,7 +69,7 @@ export function SiteHeader() {
                   "ml-1 hidden rounded-lg px-4 py-2 sm:inline-flex",
                 )}
               >
-                Iniciar escaneo
+                Analizar dominio
               </Link>
             ) : null}
           </nav>

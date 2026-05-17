@@ -25,15 +25,16 @@ export function SearchHero({
       <div className="mx-auto w-full max-w-xl space-y-8 text-center">
         <header className="space-y-3">
           <p className="text-sm font-medium uppercase tracking-widest text-accent">
-            Hack LATAM — Recon dashboard
+            Hack LATAM — Huella externa pasiva
           </p>
           <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            See what the internet already knows about a domain
+            Qué se ve ya en público sobre un dominio
           </h1>
           <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Passive checks only — certificate transparency names, DNS email-auth
-            signals (SPF / DMARC / DKIM hints), and a simple HTTPS certificate
-            readout — explained in plain language.
+            Comprobaciones defensivas: nombres en transparencia de certificados,
+            señales DNS de correo (SPF, DMARC y pistas de DKIM) y datos del
+            certificado HTTPS — en texto plano para equipos PYME (solo objetivos que
+            debas poder analizar).
           </p>
         </header>
 
@@ -42,14 +43,14 @@ export function SearchHero({
           className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 text-left shadow-sm"
         >
           <label htmlFor={inputId} className="text-sm font-medium text-foreground">
-            Target domain or URL
+            Dominio o URL (solo con autorización)
           </label>
           <Input
             id={inputId}
             name="target"
             value={target}
             onChange={(e) => onTargetChange(e.target.value)}
-            placeholder="example.com or https://www.example.com"
+            placeholder="example.com o https://www.example.com"
             className="min-h-11 rounded-xl border-input bg-background px-4 py-3 font-mono text-base"
             autoComplete="off"
             disabled={loading}
@@ -60,7 +61,7 @@ export function SearchHero({
             size="lg"
             className="inline-flex min-h-11 justify-center rounded-xl text-sm font-semibold"
           >
-            {loading ? "Scanning…" : "Start scan"}
+            {loading ? "Analizando…" : "Obtener informe"}
           </Button>
           {error ? (
             <p className="text-sm text-destructive" role="alert">

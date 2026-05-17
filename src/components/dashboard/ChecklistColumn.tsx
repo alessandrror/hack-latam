@@ -29,9 +29,9 @@ function statusLabel(status: ChecklistStatus): string {
     case "pass":
       return "OK";
     case "warn":
-      return "Review";
+      return "Revisar";
     case "fail":
-      return "Issue";
+      return "Problema";
     default: {
       const _e: never = status;
       return _e;
@@ -80,7 +80,8 @@ export function ChecklistColumn({
 
       {rows.length === 0 ? (
         <p className="mt-4 text-sm text-muted-foreground">
-          No checklist rows yet (modules may have been skipped for this input).
+          No hay filas de checklist disponibles para esta entrada — quizá algunos módulos
+          se omitieron (por ejemplo IP en lugar de dominio o modo rápido).
         </p>
       ) : (
         <ul className="mt-4 space-y-2">
@@ -113,7 +114,7 @@ export function ChecklistColumn({
       </h3>
       {info.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">
-          No additional low-severity notes beyond the checklist.
+          Sin notas adicionales de prioridad baja fuera del checklist.
         </p>
       ) : (
         <ul className="mt-2 space-y-2">

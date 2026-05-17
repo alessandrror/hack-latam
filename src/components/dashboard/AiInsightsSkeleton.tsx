@@ -12,7 +12,7 @@ export function AiInsightsSkeleton() {
     <div className="flex flex-col rounded-xl border border-border bg-muted/30 p-4">
       <div className="h-4 w-40 motion-safe:animate-pulse rounded bg-muted" />
       <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Generating insights
+        Generando resumen…
       </p>
       <InsightLineSkeleton className="mt-4 w-full" />
       <InsightLineSkeleton className="mt-2 max-w-[92%]" />

@@ -18,6 +18,21 @@ function moduleStatusDot(status: ScanModuleResult["status"]): string {
   }
 }
 
+function moduleStatusLabel(status: ScanModuleResult["status"]): string {
+  switch (status) {
+    case "ok":
+      return "correcto";
+    case "error":
+      return "fallo";
+    case "skipped":
+      return "omitido";
+    default: {
+      const _x: never = status;
+      return _x;
+    }
+  }
+}
+
 type AssetsColumnProps = {
   displayTarget: string;
   normalizedTarget?: string;
@@ -61,13 +76,13 @@ export function AssetsColumn({
         Activos y estado
       </h2>
       <div className="mt-3 rounded-lg border border-border bg-muted/40 p-3">
-        <p className="text-xs text-muted-foreground">Target</p>
+        <p className="text-xs text-muted-foreground">Dominio objetivo</p>
         <p className="mt-1 font-mono text-sm font-medium break-all text-foreground">
           {displayTarget || "—"}
         </p>
         {normalizedTarget ? (
           <p className="mt-2 text-xs text-muted-foreground">
-            Normalized:{" "}
+            Normalizado:{" "}
             <span className="font-mono text-foreground">{normalizedTarget}</span>
             {inputKind ? (
               <span className="text-muted-foreground/80"> · {inputKind}</span>
@@ -77,11 +92,11 @@ export function AssetsColumn({
       </div>
 
       <h3 className="mt-5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Modules
+        Módulos
       </h3>
       {list.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">
-          No module results yet — the scan may have failed or not finished.
+          Aún no hay resultados de módulos: el análisis pudo fallar o estar en curso.
         </p>
       ) : (
         <ul className="mt-2 space-y-2">
@@ -97,7 +112,7 @@ export function AssetsColumn({
               />
               <span className="font-mono text-foreground">{module.name}</span>
               <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium uppercase text-muted-foreground">
-                {module.status}
+                {moduleStatusLabel(module.status)}
               </span>
               {typeof module.durationMs === "number" ? (
                 <span className="text-xs text-muted-foreground tabular-nums">
@@ -119,15 +134,15 @@ export function AssetsColumn({
       </h3>
       {hostnames.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">
-          No hostnames in this scan yet (subdomain module may be skipped or
-          empty).
+          No aparecen hostnames en este resultado (por ejemplo porque el modo omitió CT
+          o no hay entradas en logs públicos para este dominio).
         </p>
       ) : (
         <div className="mt-2">
           <p className="text-xs text-muted-foreground">
-            {totalHostnames} total
+            {totalHostnames} en total
             {totalHostnames > hostnames.length
-              ? ` · showing ${hostnames.length}`
+              ? ` · mostrando ${hostnames.length}`
               : null}
           </p>
           <ul className="mt-2 max-h-64 overflow-y-auto rounded-lg border border-border bg-muted/40 p-2 font-mono text-xs text-foreground">

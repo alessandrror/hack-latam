@@ -19,6 +19,36 @@ function severityBadge(severity: Severity): string {
   }
 }
 
+function severityHeadingEs(severity: Severity): string {
+  switch (severity) {
+    case "critical":
+      return "Severidad: crítica";
+    case "medium":
+      return "Severidad: media";
+    case "low":
+      return "Prioridad informativa (baja)";
+    default: {
+      const _e: never = severity;
+      return _e;
+    }
+  }
+}
+
+function severityBadgeLabelEs(severity: Severity): string {
+  switch (severity) {
+    case "critical":
+      return "crítico";
+    case "medium":
+      return "medio";
+    case "low":
+      return "bajo";
+    default: {
+      const _e: never = severity;
+      return _e;
+    }
+  }
+}
+
 const ORDER: Severity[] = ["critical", "medium", "low"];
 
 type AllFindingsPanelProps = {
@@ -35,7 +65,7 @@ export function AllFindingsPanel({
       <Card className="border border-border shadow-sm">
         <CardContent className="p-6">
           <p className="text-sm text-muted-foreground">
-            Sin hallazgos en este escaneo. Revisa activos y checklist.
+            Sin hallazgos en esta pasada. Revisa activos y checklist.
           </p>
         </CardContent>
       </Card>
@@ -52,7 +82,7 @@ export function AllFindingsPanel({
       {grouped.map((group) => (
         <section key={group.severity}>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {group.severity}
+            {severityHeadingEs(group.severity)}
           </h3>
           <ul className="mt-3 space-y-3">
             {group.items.map((finding) => (
@@ -65,7 +95,7 @@ export function AllFindingsPanel({
                       finding.severity,
                     )}`}
                   >
-                    {finding.severity}
+                    {severityBadgeLabelEs(finding.severity)}
                   </span>
                   <span className="font-mono text-xs text-muted-foreground">
                     {finding.module}

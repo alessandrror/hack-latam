@@ -7,8 +7,8 @@ export function SiteFooter() {
         <div>
           <p className="text-sm font-semibold text-foreground">Hack LATAM</p>
           <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-            Reconocimiento pasivo de superficie de ataque para PYMEs. Solo datos
-            públicos — sin explotación.
+            Visibilidad defensiva de tu huella externa para PYMEs: solo señales
+            públicas y pasivas; sin explotación ni pentest.
           </p>
         </div>
         <nav className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -24,7 +24,7 @@ export function SiteFooter() {
         </nav>
       </div>
       <p className="border-t border-border py-4 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Hack LATAM — Hackathon defense track
+        © {new Date().getFullYear()} Hack LATAM · hackathon def/acc · resiliencia defensiva
       </p>
     </footer>
   );

@@ -11,18 +11,18 @@ export function LandingHero() {
         variant="outline"
         className="inline-flex rounded-full border-border bg-muted px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-foreground shadow-none hover:bg-muted"
       >
-        Cyber Twin Protocol
+        Recon pasivo · Defensa
       </Badge>
       <h1 className="mt-8 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-        Detección de amenazas{" "}
+        Lo que Internet ya muestra{" "}
         <GradientText as="span" className="block sm:inline">
-          en tiempo real
+          sobre tu dominio
         </GradientText>
       </h1>
       <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-        Visualiza la superficie de ataque de tu dominio con reconocimiento pasivo:
-        subdominios, email auth, TLS e insights con IA — explicado para equipos sin
-        especialista en seguridad.
+        Un informe en lenguaje claro a partir de datos públicos: huella en
+        transparencia de certificados, SPF/DMARC/DKIM y certificado HTTPS en :443.
+        La IA resume pasos de verificación y remediación — tú decides qué aplicar.
       </p>
       <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
         <Link
@@ -32,7 +32,7 @@ export function LandingHero() {
             "inline-flex min-h-12 rounded-xl px-8 text-sm",
           )}
         >
-          Iniciar escaneo →
+          Analizar mi dominio →
         </Link>
         <Link
           href="/scan"
@@ -41,7 +41,7 @@ export function LandingHero() {
             "inline-flex min-h-12 rounded-xl border-border px-8 text-sm font-medium text-foreground hover:bg-muted",
           )}
         >
-          Ver panel
+          Abrir el panel
         </Link>
       </div>
     </section>

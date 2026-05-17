@@ -86,7 +86,8 @@ export function ScanHistorySidebar({
                 Historial de escaneos
               </p>
               <p className="text-xs text-muted-foreground">
-                Cloud en vivo vía Convex
+                Convex en servidor; el guardado tras cada consulta debe enlazarse
+                desde la app para ver filas nuevas aquí.
               </p>
             </div>
             <Button
