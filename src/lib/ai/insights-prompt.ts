@@ -6,16 +6,17 @@ import type {
   AiInsightsConfidence,
 } from "@/types/ai-insights";
 
-const SYSTEM_PROMPT = `You are a defensive security advisor for SMB asset owners evaluating passive reconnaissance results.
+const SYSTEM_PROMPT = `Eres un asesor de ciberseguridad defensiva para responsables de PYME que revisan resultados de reconocimiento pasivo.
 
-Rules:
-- Only provide defensive remediation and verification steps. Never exploitation, intrusion, phishing, harassment, bypass, or unauthorized access instructions.
-- Never claim completeness: these checks are passive and may miss assets or mis-state risk.
-- Output MUST be valid JSON only, no markdown fences, no commentary before or after the JSON object.
-- Use the finding ids exactly as provided in input for keys in perFindingInsightsById and relatedFindingIds.
-- For checklistRowInsightsById use these keys when relevant: check-spf, check-dmarc, check-dkim, check-caa, check-cert, check-tls-versions (omit unknown keys).
+Reglas:
+- Solo remediación y verificación defensiva. Nunca explotación, intrusión, phishing, acoso, evasión ni acceso no autorizado.
+- No afirmes cobertura total: estas comprobaciones son pasivas e incompletas.
+- La salida DEBE ser solo JSON válido, sin bloques markdown, sin texto antes ni después del objeto JSON.
+- Usa exactamente los ids de hallazgos del input como claves en perFindingInsightsById y en relatedFindingIds.
+- Para checklistRowInsightsById usa solo claves relevantes: check-spf, check-dmarc, check-dkim, check-caa, check-cert, check-tls-versions (omite claves desconocidas).
+- Todos los textos para la operadora (executiveSummary, títulos, why, verifyStep, disclaimers, meaning) deben estar en español.
 
-JSON shape:
+Forma JSON:
 {
   "executiveSummary": string,
   "topActions": array of { "id": string, "priority": "critical"|"medium"|"low", "title": string, "why": string, "verifyStep": string, "confidence": "high"|"medium"|"low", "relatedFindingIds": string[] optional },
@@ -33,41 +34,39 @@ export function buildUserPrompt(context: AiInsightsRequestBody): string {
       totalHostnamesReported: context.totalHostnames,
       hostnameSampleShownCount: context.hostnameSampleShownCount,
       note:
-        "Do not enumerate or guess individual hostnames; only refer to totals if useful.",
+        "No enumeres ni inventes hostnames individuales; solo usa totales si aporta valor.",
     },
     modules: context.modules,
     checklistRows: context.checklistRows ?? [],
     findings: context.findings,
   };
 
-  return `Analyze the following passive scan snapshot and produce the JSON object described in your instructions.
+  return `Analiza la siguiente instantánea de escaneo pasivo y produce el objeto JSON descrito en tus instrucciones.
 
 INPUT_JSON:
 ${JSON.stringify(payload)}`;
 }
 
 export function getInsightsSystemPrompt(
-  scanMode: "deep" | "quick" = "deep",
+  scanMode: "deep" | "quick" = "deep"
 ): string {
   const modeBlock =
     scanMode === "quick"
       ? `
 
-Scan mode context (must influence executiveSummary tone):
-- This was a QUICK scan: certificate transparency subdomain enumeration was skipped on the server, low-severity findings were omitted, and checklist detail may be absent.
-- Do not imply full attack-surface or subdomain coverage. You may say the snapshot is a faster, priority-focused pass.`
+Contexto de modo (debe influir en el tono de executiveSummary):
+- Escaneo RÁPIDO: se omitió enumeración CT de subdominios, los hallazgos de severidad baja se filtraron en el servidor y el checklist puede estar incompleto.
+- No impliques inventario completo de superficie de ataque ni cobertura de subdominios. Puedes describirlo como un paso prioritario y más rápido.`
       : `
 
-Scan mode context (must influence executiveSummary tone):
-- This was a DEEP scan: all passive modules ran and the full checklist/low-severity signal may be present unless modules failed.
-- You may describe this as a broader audit-style passive snapshot (still not exhaustive).`;
+Contexto de modo (debe influir en el tono de executiveSummary):
+- Escaneo PROFUNDO: se ejecutaron todos los módulos pasivos y pueden aparecer checklist y señales de severidad baja salvo fallos de módulos.
+- Puedes describirlo como una instantánea pasiva más amplia (no exhaustiva).`;
 
   return SYSTEM_PROMPT + modeBlock;
 }
 
-function isSeverityLike(
-  s: unknown,
-): s is AiInsightsTopAction["priority"] {
+function isSeverityLike(s: unknown): s is AiInsightsTopAction["priority"] {
   return s === "critical" || s === "medium" || s === "low";
 }
 
@@ -75,9 +74,7 @@ function isConfidenceLike(s: unknown): s is AiInsightsConfidence {
   return s === "high" || s === "medium" || s === "low";
 }
 
-function parsePerFindingInsights(
-  raw: unknown,
-): Record<string, AiPerFindingInsight> {
+function parsePerFindingInsights(raw: unknown): Record<string, AiPerFindingInsight> {
   const out: Record<string, AiPerFindingInsight> = {};
   if (!raw || typeof raw !== "object") return out;
   for (const [key, val] of Object.entries(raw)) {
@@ -176,8 +173,8 @@ export function parseInsightsModelOutput(text: string): AiInsightsResponseBody {
 
   if (disclaimers.length === 0) {
     disclaimers = [
-      "These insights are informational and incomplete; passive scans cannot prove absence of issues.",
-      "Verify all items in your own environment with authorized personnel.",
+      "Estas orientaciones son informativas e incompletas; los escaneos pasivos no prueban la ausencia de problemas.",
+      "Verifica cada punto en tu propio entorno con personal autorizado.",
     ];
   }
 
