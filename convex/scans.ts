@@ -83,11 +83,10 @@ export const getUserScans = queryGeneric({
       return [];
     }
 
-    const rows = await ctx.db
+    return await ctx.db
       .query("scans")
-      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-      .collect();
-
-    return rows.sort((a, b) => b.createdAt - a.createdAt);
+      .withIndex("by_user", (q) => q.eq("userId", identity.tokenIdentifier))
+      .order("desc")
+      .take(100);
   },
 });
