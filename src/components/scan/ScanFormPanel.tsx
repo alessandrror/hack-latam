@@ -6,7 +6,6 @@ import type { FormEvent } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +23,23 @@ type ScanFormPanelProps = {
   isAuthenticated: boolean;
 };
 
+const MODE_OPTIONS: {
+  id: ScanMode;
+  label: string;
+  desc: string;
+}[] = [
+  {
+    id: "deep",
+    label: "Profundo",
+    desc: "Seis módulos + checklist. Requiere sesión iniciada.",
+  },
+  {
+    id: "quick",
+    label: "Rápido",
+    desc: "Cobertura reducida; sin hallazgos de severidad baja.",
+  },
+];
+
 export function ScanFormPanel({
   target,
   onTargetChange,
@@ -40,162 +56,143 @@ export function ScanFormPanel({
     scanMode === "deep" && authLoaded && !isAuthenticated;
 
   return (
-    <div className="mx-auto w-full max-w-2xl text-center">
-      <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
-        Instantáneo sobre tu{" "}
-        <span className="font-semibold text-primary">huella observable</span>
-      </h1>
-      <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-        Introduce dominio o URL que puedas analizar por ley o acuerdo. Consultamos solo lo que un observador externo también vería mediante DNS y HTTPS (puerto{" "}
-        <span className="font-mono">443</span>). El modo{" "}
-        <span className="font-semibold text-accent">rápido</span> omite parte de la huella por transparencia de certificados y filtra hallazgos de severidad baja para dejarte lo urgente primero; el modo{" "}
-        <span className="font-semibold text-accent">profundo</span> ejecuta los seis módulos pasivos, muestra checklist técnica y requiere iniciar sesión.
-      </p>
-
-      <form onSubmit={onSubmit} className="mt-10 space-y-6 text-left">
-        <div>
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <label
-              htmlFor="scan-target"
-              className="text-sm font-medium text-foreground"
-            >
-              Dominio o URL autorizado
-            </label>
-            <span className="font-mono text-xs tabular-nums text-muted-foreground">
+    <div className="w-full space-y-6 text-left">
+      <form onSubmit={onSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <label htmlFor="scan-target" className="sr-only">
+            Dominio o URL
+          </label>
+          <div
+            className={cn(
+              "flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-4 py-1 shadow-sm transition-[border-color,box-shadow] duration-150",
+              "focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30",
+            )}
+          >
+            <Input
+              id="scan-target"
+              name="target"
+              value={target}
+              onChange={(e) => onTargetChange(e.target.value.slice(0, 256))}
+              placeholder="Dominio o URL — example.com"
+              maxLength={256}
+              disabled={loading}
+              className={cn(
+                "min-h-12 flex-1 border-0 bg-transparent px-0 py-3 font-mono text-base shadow-none",
+                "focus-visible:ring-0 focus-visible:ring-offset-0",
+                "placeholder:text-muted-foreground/80",
+              )}
+              autoComplete="off"
+            />
+            <span className="hidden shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground sm:block">
               {charCount}/256
             </span>
           </div>
-          <Input
-            id="scan-target"
-            name="target"
-            value={target}
-            onChange={(e) => onTargetChange(e.target.value.slice(0, 256))}
-            placeholder="example.com o https://www.example.com"
-            maxLength={256}
-            disabled={loading}
-            className="min-h-16 w-full rounded-lg border-input bg-background px-5 py-5 font-mono text-base transition-[box-shadow,border-color] duration-200 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            autoComplete="off"
-          />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          {(
-            [
-              {
-                id: "deep" as const,
-                title: "Profundo",
-                desc: "Los seis módulos pasivos + checklist técnica (cuenta iniciada).",
-              },
-              {
-                id: "quick" as const,
-                title: "Rápido",
-                desc: "Menos cobertura: sin parte de huella CT y sin hallazgos de nivel bajo en la respuesta.",
-              },
-            ] as const
-          ).map((opt) => (
-            <Button
-              key={opt.id}
-              type="button"
-              variant="ghost"
-              onClick={() => onScanModeChange(opt.id)}
-              disabled={loading}
-              className={cn(
-                "flex h-auto w-full shrink-0 cursor-pointer items-start justify-start gap-2.5 rounded-lg border border-border bg-card p-3 text-left font-normal shadow-sm transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                scanMode === opt.id
-                  ? "border-primary ring-1 ring-primary/25"
-                  : "opacity-90 hover:border-input",
-              )}
-            >
-              <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-1.5 font-semibold text-foreground">
-                  {opt.title}
+        <div className="space-y-2">
+          <p id="scan-mode-label" className="sr-only">
+            Modo de escaneo
+          </p>
+          <div
+            className="flex flex-wrap justify-center gap-2 sm:justify-start"
+            role="group"
+            aria-labelledby="scan-mode-label"
+          >
+            {MODE_OPTIONS.map((opt) => {
+              const selected = scanMode === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  title={opt.desc}
+                  disabled={loading}
+                  onClick={() => onScanModeChange(opt.id)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors duration-150",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    "disabled:pointer-events-none disabled:opacity-40",
+                    selected
+                      ? "border-primary/50 bg-primary text-primary-foreground shadow-sm"
+                      : "border-border/60 bg-background text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground",
+                  )}
+                >
+                  {opt.label}
                   {opt.id === "deep" && !isAuthenticated ? (
                     <Badge
                       variant="outline"
-                      className="h-fit border-primary/25 bg-primary/5 px-1.5 py-0 text-[10px] font-bold uppercase tracking-wider text-primary"
+                      className={cn(
+                        "h-fit border px-1 py-0 text-[9px] font-bold uppercase tracking-wider",
+                        selected
+                          ? "border-primary-foreground/40 bg-primary-foreground/15 text-primary-foreground"
+                          : "border-primary/30 bg-primary/5 text-primary",
+                      )}
                     >
                       Cuenta
                     </Badge>
                   ) : null}
-                </p>
-                <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground sm:text-xs">
-                  {opt.desc}
-                </p>
-                {opt.id === "deep" && !isAuthenticated ? (
-                  <p className="mt-2 text-[11px] leading-snug text-sky-200">
-                    <SignInButton mode="modal">
-                      <span className="underline decoration-accent/70 underline-offset-2 transition-colors hover:text-accent">
-                        Inicia sesión
-                      </span>
-                    </SignInButton>{" "}
-                    para ejecutar este modo.
-                  </p>
-                ) : null}
-              </div>
-              <span
-                className={cn(
-                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200",
-                  scanMode === opt.id
-                    ? "border-primary bg-primary"
-                    : "border-muted-foreground/40",
-                )}
-                aria-hidden
-              >
-                {scanMode === opt.id ? (
-                  <span className="h-2 w-2 rounded-full bg-primary-foreground" />
-                ) : null}
-              </span>
-            </Button>
-          ))}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-center text-[11px] leading-snug text-muted-foreground sm:text-left">
+            {MODE_OPTIONS.find((o) => o.id === scanMode)?.desc}
+            {scanMode === "deep" && !isAuthenticated ? (
+              <>
+                {" "}
+                <SignInButton mode="modal">
+                  <span className="cursor-pointer font-medium text-primary underline decoration-primary/40 underline-offset-2">
+                    Inicia sesión
+                  </span>
+                </SignInButton>{" "}
+                para modo profundo.
+              </>
+            ) : null}
+          </p>
         </div>
 
-        <p className="rounded-lg border border-border bg-muted/40 px-3 py-3 text-xs leading-relaxed text-muted-foreground">
-          Usa solo objetivos de tu empresa o para los que tengas autorización escrita equivalente — no ejecutamos vigilancia ni detección de intrusión en tiempo real.
+        <p className="text-center text-[11px] leading-relaxed text-muted-foreground sm:text-left">
+          Solo objetivos tuyos o con autorización explícita. Pasivo: DNS y HTTPS
+          públicos; sin vigilancia intrusiva ni tiempo real.
         </p>
 
         <Button
           type="submit"
           disabled={loading || !target.trim() || deepRequiresAuth}
           size="lg"
-          className="flex min-h-14 w-full cursor-pointer gap-2 rounded-lg text-base transition active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
+          className="h-12 w-full rounded-full text-sm font-semibold shadow-sm transition-colors duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-40"
         >
-          {loading ? "Ejecutando módulos…" : "Lanzar comprobaciones pasivas"}
-          {!loading ? <span aria-hidden>→</span> : null}
+          {loading ? "Ejecutando módulos…" : "Lanzar comprobaciones"}
         </Button>
 
         {deepRequiresAuth ? (
-          <p className="text-center text-sm text-sky-200" role="status">
-            Seleccionaste el modo{" "}
-            <strong>profundo</strong>.{" "}
+          <p className="text-center text-xs text-primary" role="status">
             <SignInButton mode="modal">
-              <span className="underline decoration-accent underline-offset-2 transition-colors hover:text-accent">
-                Entra o crea una cuenta
+              <span className="cursor-pointer underline underline-offset-2 transition-colors hover:text-primary">
+                Entra o crea cuenta
               </span>
             </SignInButton>{" "}
-            para continuar, o cambia a <strong>modo rápido</strong>.
+            o elige <strong>modo rápido</strong>.
           </p>
         ) : null}
 
         {error ? (
-          <p className="text-center text-sm text-destructive" role="alert">
+          <p className="text-center text-xs text-destructive" role="alert">
             {error}
           </p>
         ) : null}
       </form>
 
-      <Card className="mt-8 gap-0 border border-border py-0 text-left shadow-sm">
-        <CardContent className="flex gap-3 p-4 text-sm">
-          <Zap
-            className="mt-0.5 h-5 w-5 shrink-0 text-accent"
-            aria-hidden
-          />
-          <p className="text-muted-foreground">
-            <span className="font-semibold text-foreground">Nota práctica:</span> dominios públicos grandes (p.&nbsp;ej.{" "}
-            <span className="font-mono text-foreground">cloudflare.com</span>)
-            sirven para probar la interfaz — en producción, escanea siempre tus propios dominios autorizados. Con solo una IP sin nombre, parte de TLS vía SNI puede no comportarse igual que con un hostname claro.
-          </p>
-        </CardContent>
-      </Card>
+      <p className="flex items-start gap-2.5 text-[11px] leading-relaxed text-muted-foreground">
+        <Zap
+          className="mt-px size-4 shrink-0 text-primary"
+          aria-hidden
+        />
+        <span>
+          <span className="font-semibold text-foreground">Tip:</span> dominios
+          grandes sirven como demo; sin hostname claro, el TLS puede verse
+          distinto a producción real.
+        </span>
+      </p>
     </div>
   );
 }

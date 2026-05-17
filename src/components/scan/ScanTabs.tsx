@@ -1,16 +1,16 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 export type ScanTabId =
   | "overview"
-  | "scan"
   | "assets"
   | "findings"
   | "checklist"
   | "ai";
 
-const ALL_TABS: { id: ScanTabId; label: string }[] = [
+const RESULT_TABS: { id: ScanTabId; label: string }[] = [
   { id: "overview", label: "Resumen" },
-  { id: "scan", label: "Escaneo" },
   { id: "assets", label: "Activos" },
   { id: "findings", label: "Hallazgos" },
   { id: "checklist", label: "Checklist" },
@@ -34,39 +34,45 @@ export function ScanTabs({
   showChecklistTab = true,
 }: ScanTabsProps) {
   const tabs = showChecklistTab
-    ? ALL_TABS
-    : ALL_TABS.filter((t) => t.id !== "checklist");
+    ? RESULT_TABS
+    : RESULT_TABS.filter((t) => t.id !== "checklist");
 
   return (
-    <div
-      role="tablist"
-      aria-label="Secciones del escáner"
-      className="flex flex-wrap gap-2 border-b border-border pb-4"
-    >
-      {tabs.map((tab) => {
-        const isScanTab = tab.id === "scan";
-        const tabDisabled =
-          Boolean(disabled) || (!isScanTab && !hasResults);
-        const isActive = active === tab.id;
+    <nav aria-label="Secciones de resultados" className="w-full">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:mb-2.5">
+        Resultados
+      </p>
+      <div
+        role="tablist"
+        aria-label="Navegar entre resumen, activos y hallazgos"
+        className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1"
+      >
+        {tabs.map((tab) => {
+          const tabDisabled = Boolean(disabled) || !hasResults;
+          const isActive = active === tab.id;
 
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            disabled={tabDisabled}
-            onClick={() => onChange(tab.id)}
-            className={`min-h-11 min-w-[44px] cursor-pointer rounded-lg border px-4 py-2.5 text-sm font-medium transition ${
-              isActive
-                ? "border-primary bg-primary/10 text-primary shadow-sm"
-                : "border-border bg-muted/50 text-muted-foreground hover:border-input hover:bg-muted hover:text-foreground"
-            } disabled:cursor-not-allowed disabled:opacity-40`}
-          >
-            {tab.label}
-          </button>
-        );
-      })}
-    </div>
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              disabled={tabDisabled}
+              onClick={() => onChange(tab.id)}
+              className={cn(
+                "relative shrink-0 cursor-pointer rounded-full px-3.5 py-2 text-sm font-medium outline-none transition-[background-color,color,box-shadow] duration-150",
+                "focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
+                "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-muted/50 disabled:hover:text-muted-foreground motion-reduce:transition-none",
+              )}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }

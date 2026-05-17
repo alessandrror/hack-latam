@@ -66,7 +66,7 @@ export function ScanOverviewPanel({
   const topRisks = riskFindings(findings).slice(0, 4);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 p-5">
       <div className="rounded-2xl border border-border bg-card/60 px-5 py-4 shadow-sm backdrop-blur-sm">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Objetivo escaneado
