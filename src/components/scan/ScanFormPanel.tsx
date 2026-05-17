@@ -8,6 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import type { TargetInputKind } from "@/lib/recon/normalize-target";
+
+import {
+  OwnershipVerificationSection,
+  type VerificationSnapshot,
+} from "./OwnershipVerificationSection";
 
 export type ScanMode = "deep" | "quick";
 
@@ -21,6 +27,12 @@ type ScanFormPanelProps = {
   error: string | null;
   authLoaded: boolean;
   isAuthenticated: boolean;
+  targetKind: TargetInputKind;
+  /** Registrable apex when `targetKind === "domain"` */
+  apexDomain: string | null;
+  /** `undefined` while Convex `getStatus` is loading */
+  verification: VerificationSnapshot | undefined;
+  onOwnershipVerified: () => void;
 };
 
 const MODE_OPTIONS: {
@@ -31,7 +43,7 @@ const MODE_OPTIONS: {
   {
     id: "deep",
     label: "Profundo",
-    desc: "Seis módulos + checklist. Requiere sesión iniciada.",
+    desc: "Seis módulos + checklist. Cuenta y verificación DNS o HTTPS del apex.",
   },
   {
     id: "quick",
@@ -50,10 +62,22 @@ export function ScanFormPanel({
   error,
   authLoaded,
   isAuthenticated,
+  targetKind,
+  apexDomain,
+  verification,
+  onOwnershipVerified,
 }: ScanFormPanelProps) {
   const charCount = target.length;
   const deepRequiresAuth =
     scanMode === "deep" && authLoaded && !isAuthenticated;
+  const deepIpBlocked =
+    scanMode === "deep" && authLoaded && targetKind === "ip";
+  const deepOwnershipBlocked =
+    scanMode === "deep" &&
+    authLoaded &&
+    isAuthenticated &&
+    Boolean(apexDomain) &&
+    verification?.status !== "verified";
 
   return (
     <div className="w-full space-y-6 text-left">
@@ -157,12 +181,60 @@ export function ScanFormPanel({
 
         <Button
           type="submit"
-          disabled={loading || !target.trim() || deepRequiresAuth}
+          disabled={
+            loading ||
+            !target.trim() ||
+            deepRequiresAuth ||
+            deepOwnershipBlocked ||
+            deepIpBlocked
+          }
           size="lg"
           className="h-12 w-full rounded-full text-sm font-semibold shadow-sm transition-colors duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-40"
         >
           {loading ? "Ejecutando módulos…" : "Lanzar comprobaciones"}
         </Button>
+
+        {scanMode === "deep" &&
+        isAuthenticated &&
+        apexDomain &&
+        verification === undefined ? (
+          <p
+            className="text-center text-[11px] text-muted-foreground"
+            role="status"
+          >
+            Comprobando titularidad del dominio…
+          </p>
+        ) : null}
+
+        {scanMode === "deep" &&
+        isAuthenticated &&
+        apexDomain &&
+        verification !== undefined &&
+        verification?.status !== "verified" &&
+        !deepIpBlocked ? (
+          <>
+            <p className="text-center text-[11px] leading-snug text-muted-foreground">
+              El modo profundo solo corre tras verificar el apex{" "}
+              <span className="font-mono text-foreground">{apexDomain}</span>.
+            </p>
+            <OwnershipVerificationSection
+              apexDomain={apexDomain}
+              verification={verification}
+              disabled={loading}
+              onVerified={onOwnershipVerified}
+            />
+          </>
+        ) : null}
+
+        {deepIpBlocked ? (
+          <p
+            className="text-center text-xs text-amber-700 dark:text-amber-500/90"
+            role="status"
+          >
+            El modo profundo no admite solo IP. Usa un nombre de dominio o
+            cambia a <strong>modo rápido</strong>.
+          </p>
+        ) : null}
 
         {deepRequiresAuth ? (
           <p className="text-center text-xs text-primary" role="status">

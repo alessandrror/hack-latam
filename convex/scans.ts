@@ -17,6 +17,7 @@ export const createScan = mutationGeneric({
     scanMode,
     findings: v.array(v.any()),
     modules: v.array(v.any()),
+    domainVerifiedAt: v.optional(v.number()),
   },
   returns: v.id("scans"),
   handler: async (ctx, args) => {
@@ -33,6 +34,7 @@ export const createScan = mutationGeneric({
       scanMode: args.scanMode,
       findings: args.findings,
       modules: args.modules,
+      domainVerifiedAt: args.domainVerifiedAt,
       createdAt: Date.now(),
     });
   },
@@ -74,6 +76,7 @@ export const getUserScans = queryGeneric({
       findings: v.array(v.any()),
       modules: v.array(v.any()),
       aiInsights: v.optional(v.any()),
+      domainVerifiedAt: v.optional(v.number()),
       createdAt: v.number(),
     }),
   ),

@@ -15,8 +15,27 @@ export default defineSchema({
     findings: v.array(v.any()),
     modules: v.array(v.any()),
     aiInsights: v.optional(v.any()),
+    domainVerifiedAt: v.optional(v.number()),
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  verifiedDomains: defineTable({
+    userId: v.string(),
+    domain: v.string(),
+    method: v.union(v.literal("dns_txt"), v.literal("http_file")),
+    token: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("verified"),
+      v.literal("failed"),
+    ),
+    verifiedAt: v.optional(v.number()),
+    lastCheckedAt: v.optional(v.number()),
+    failureReason: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_domain", ["userId", "domain"]),
 
   aiInsightsCache: defineTable({
     normalizedTarget: v.string(),
