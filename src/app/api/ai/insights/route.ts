@@ -220,6 +220,7 @@ export async function POST(request: Request) {
     try {
       const hit = await fetchQuery(anyApi.aiInsightsCache.getCached, {
         normalizedTarget: validated.normalizedTarget,
+        now: Date.now(),
       });
       if (hit) {
         const body: AiInsightsResponseBody = {
