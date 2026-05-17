@@ -6,6 +6,7 @@ import { AllFindingsPanel } from "@/components/dashboard/AllFindingsPanel";
 import { AssetsColumn } from "@/components/dashboard/AssetsColumn";
 import { ChecklistColumn } from "@/components/dashboard/ChecklistColumn";
 import { RiskColumn } from "@/components/dashboard/RiskColumn";
+import { ScanOverviewPanel } from "@/components/dashboard/ScanOverviewPanel";
 import { SkeletonGrid } from "@/components/dashboard/SkeletonGrid";
 import {
   aggregateHostnamesFromFindings,
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 import type { AiInsightsResponseBody } from "@/types/ai-insights";
 import type { ScanResponseBody } from "@/types/scan";
 import { useCallback, useMemo, useState, type FormEvent } from "react";
+
 import { ScanFormPanel, type ScanMode } from "./ScanFormPanel";
 import { ScanTabs, type ScanTabId } from "./ScanTabs";
 
@@ -30,9 +32,13 @@ function isAiInsightsResponseBody(x: unknown): x is AiInsightsResponseBody {
   );
 }
 
-export function ScanWorkspace() {
+type ScanWorkspaceProps = {
+  initialTarget?: string;
+};
+
+export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
   const { isLoaded: authLoaded, isSignedIn } = useAuth();
-  const [target, setTarget] = useState("");
+  const [target, setTarget] = useState(initialTarget);
   const [scanMode, setScanMode] = useState<ScanMode>("deep");
   const [activeTab, setActiveTab] = useState<ScanTabId>("scan");
   const [loading, setLoading] = useState(false);
@@ -92,7 +98,7 @@ export function ScanWorkspace() {
         return;
       }
       setResult(body as ScanResponseBody);
-      setActiveTab(scanMode === "quick" ? "findings" : "assets");
+      setActiveTab("overview");
     } catch {
       setError("Error de red — inténtalo de nuevo.");
     } finally {
@@ -100,11 +106,12 @@ export function ScanWorkspace() {
     }
   }
 
-  const generateInsights = useCallback(async () => {
-    if (!result || loading) return;
-    setAiLoading(true);
-    setAiError(null);
-    try {
+  const generateInsights = useCallback(
+    async (opts?: { forceRefresh?: boolean; navigateToAi?: boolean }) => {
+      if (!result || loading) return;
+      setAiLoading(true);
+      setAiError(null);
+      try {
       const checklistRowsBuilt = buildChecklistRows(findingsForGrid).map(
         (r) => ({
           id: r.id,
@@ -163,19 +170,23 @@ export function ScanWorkspace() {
         return;
       }
       setAiResult(payload);
-      setActiveTab("ai");
+      if (opts?.navigateToAi !== false) {
+        setActiveTab("ai");
+      }
     } catch {
       setAiError("Error de red — inténtalo de nuevo.");
     } finally {
       setAiLoading(false);
     }
-  }, [
+  },
+  [
     findingsForGrid,
     hostAggregate.hostnames.length,
     hostAggregate.total,
     loading,
     result,
-  ]);
+  ],
+);
 
   const displayTarget =
     result?.normalizedTarget?.trim() ||
@@ -232,7 +243,6 @@ export function ScanWorkspace() {
             ) : null}
           </div>
         ) : null}
-
         {loading && activeTabResolved !== "scan" ? (
           <div className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-accent">
@@ -243,6 +253,23 @@ export function ScanWorkspace() {
             </p>
             <SkeletonGrid />
           </div>
+        ) : null}
+
+        {activeTabResolved === "overview" && showResults ? (
+          <ScanOverviewPanel
+            normalizedTarget={displayTarget}
+            findings={findingsForGrid}
+            modules={moduleRows}
+            totalHostnames={hostAggregate.total}
+            aiResult={aiResult}
+            aiLoading={aiLoading}
+            aiDisabled={loading}
+            onGenerateInsights={() =>
+              void generateInsights({ navigateToAi: false })
+            }
+            onGoToFindingsTab={() => setActiveTab("findings")}
+            showChecklistDeepDive={result.mode !== "quick"}
+          />
         ) : null}
 
         {activeTabResolved === "assets" && showResults ? (
@@ -283,7 +310,9 @@ export function ScanWorkspace() {
             error={aiError}
             result={aiResult}
             disabled={loading}
-            onGenerate={generateInsights}
+            onGenerate={(opts) =>
+              void generateInsights({ ...opts, navigateToAi: true })
+            }
           />
         ) : null}
 

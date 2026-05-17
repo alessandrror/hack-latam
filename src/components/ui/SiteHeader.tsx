@@ -34,7 +34,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-        <Link href="/" className="group flex items-center gap-3">
+        <Link href="/" className="group flex min-h-11 shrink-0 items-center gap-3 rounded-lg py-1 pr-2 outline-none ring-offset-background focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-muted text-sm font-bold text-primary">
             H
           </span>
@@ -55,7 +55,7 @@ export function SiteHeader() {
                 href={item.href}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "lg" }),
-                  "rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground",
+                  "min-h-11 min-w-[44px] shrink-0 rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
                 {item.label}
@@ -66,7 +66,7 @@ export function SiteHeader() {
                 href="/scan"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
-                  "ml-1 hidden rounded-lg px-4 py-2 sm:inline-flex",
+                  "ml-1 hidden min-h-11 shrink-0 rounded-lg px-4 py-2 sm:inline-flex",
                 )}
               >
                 Analizar dominio
@@ -83,9 +83,9 @@ export function SiteHeader() {
               <UserButton
                 appearance={{
                   variables: {
-                    colorBackground: "#ffffff",
-                    colorText: "#0f172a",
-                    colorTextSecondary: "#64748b",
+                    colorBackground: "#1e293b",
+                    colorText: "#f8fafc",
+                    colorTextSecondary: "#cbd5e1",
                   },
                   elements: {
                     userButtonPopoverCard: "border border-border bg-card shadow-md",
@@ -98,7 +98,7 @@ export function SiteHeader() {
                   type="button"
                   variant="ghost"
                   size="lg"
-                  className="rounded-lg px-3 py-2 text-foreground hover:bg-muted"
+                  className="min-h-11 min-w-[44px] shrink-0 rounded-lg px-4 py-2 text-foreground hover:bg-muted"
                 >
                   Entrar
                 </Button>

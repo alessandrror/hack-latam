@@ -1,47 +1,57 @@
 import Link from "next/link";
+
+import { LandingHeroScanForm } from "@/components/landing/LandingHeroScanForm";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { GradientText } from "@/components/ui/GradientText";
 import { cn } from "@/lib/utils";
 
 export function LandingHero() {
   return (
-    <section className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 sm:py-28">
-      <Badge
-        variant="outline"
-        className="inline-flex rounded-full border-border bg-secondary px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-foreground/85 shadow-none hover:bg-secondary"
-      >
-        Recon pasivo · Defensa
-      </Badge>
-      <h1 className="mt-8 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-        Lo que Internet ya muestra{" "}
-        <GradientText as="span" className="block sm:inline">
-          sobre tu dominio
-        </GradientText>
-      </h1>
-      <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-        Un informe en lenguaje claro a partir de datos públicos: huella en
-        transparencia de certificados, SPF/DMARC/DKIM y certificado HTTPS en :443.
-        La IA resume pasos de verificación y remediación — tú decides qué aplicar.
-      </p>
-      <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-        <Link
-          href="/scan"
-          className={cn(
-            buttonVariants({ variant: "default", size: "lg" }),
-            "inline-flex min-h-12 rounded-xl px-8 text-sm",
-          )}
+    <section
+      className="relative mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24"
+      aria-labelledby="landing-hero-heading"
+    >
+      <div className="text-center">
+        <Badge
+          variant="outline"
+          className="inline-flex rounded-full border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-primary shadow-none"
         >
-          Analizar mi dominio →
-        </Link>
+          Defensa · Superficie observable
+        </Badge>
+        <h1
+          id="landing-hero-heading"
+          className="mt-8 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-[clamp(2.25rem,6vw,3.75rem)] lg:leading-[1.08]"
+        >
+          Visibilidad sobre lo que{" "}
+          <span className="text-primary">Internet ya muestra</span> sobre tu dominio
+        </h1>
+        <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
+          Comprobaciones pasivas y determinístas: huella en transparencia de
+          certificados, SPF/DMARC/DKIM y certificado HTTPS en :443. La IA solo
+          ayuda a priorizar verificación — no sustituye tu criterio.
+        </p>
+      </div>
+
+      <LandingHeroScanForm />
+
+      <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
         <Link
           href="/scan"
           className={cn(
             buttonVariants({ variant: "outline", size: "lg" }),
-            "inline-flex min-h-12 rounded-xl border-border px-8 text-sm font-medium text-foreground hover:bg-muted",
+            "inline-flex min-h-11 min-w-[44px] items-center justify-center rounded-xl border-border px-6 text-sm font-medium text-foreground hover:bg-muted",
           )}
         >
-          Abrir el panel
+          Abrir panel completo
+        </Link>
+        <Link
+          href="#funcionalidades"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "lg" }),
+            "inline-flex min-h-11 min-w-[44px] items-center justify-center rounded-xl text-muted-foreground hover:text-foreground",
+          )}
+        >
+          Cómo funciona
         </Link>
       </div>
     </section>

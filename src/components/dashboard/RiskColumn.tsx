@@ -8,11 +8,11 @@ import { FindingDetailBlocks } from "./FindingDetailBlocks";
 function severityBadgeClasses(severity: Severity): string {
   switch (severity) {
     case "critical":
-      return "bg-red-100 text-red-800 ring-1 ring-red-200";
+      return "bg-red-950/70 text-red-100 ring-1 ring-red-500/40";
     case "medium":
-      return "bg-amber-100 text-amber-900 ring-1 ring-amber-200";
+      return "bg-amber-950/60 text-amber-100 ring-1 ring-amber-400/35";
     case "low":
-      return "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200";
+      return "bg-emerald-950/50 text-emerald-100 ring-1 ring-emerald-400/35";
     default: {
       const _e: never = severity;
       return _e;

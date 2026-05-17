@@ -12,11 +12,11 @@ import { FindingDetailBlocks } from "./FindingDetailBlocks";
 function statusStyles(status: ChecklistStatus): string {
   switch (status) {
     case "pass":
-      return "border-emerald-200 bg-emerald-50 text-emerald-900";
+      return "border-emerald-500/40 bg-emerald-950/35 text-emerald-100";
     case "warn":
-      return "border-amber-200 bg-amber-50 text-amber-900";
+      return "border-amber-500/35 bg-amber-950/40 text-amber-100";
     case "fail":
-      return "border-red-200 bg-red-50 text-red-900";
+      return "border-red-500/40 bg-red-950/45 text-red-100";
     default: {
       const _e: never = status;
       return _e;

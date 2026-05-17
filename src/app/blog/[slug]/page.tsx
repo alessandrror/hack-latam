@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BLOG_POSTS, getPostBySlug } from "@/data/blog-posts";
-import { CyberBackground } from "@/components/ui/CyberBackground";
 import { NewsletterCTA } from "@/components/ui/NewsletterCTA";
 import { SiteFooter } from "@/components/ui/SiteFooter";
 import { SiteHeader } from "@/components/ui/SiteHeader";
@@ -31,7 +30,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   if (!post) notFound();
 
   return (
-    <CyberBackground>
+    <div className="min-h-dvh bg-background">
       <SiteHeader />
       <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
         <Link
@@ -98,6 +97,6 @@ export default async function BlogPostPage({ params }: PageProps) {
         </div>
       </article>
       <SiteFooter />
-    </CyberBackground>
+    </div>
   );
 }

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { BLOG_POSTS } from "@/data/blog-posts";
-import { CyberBackground } from "@/components/ui/CyberBackground";
 import { NewsletterCTA } from "@/components/ui/NewsletterCTA";
 import { SiteFooter } from "@/components/ui/SiteFooter";
 import { SiteHeader } from "@/components/ui/SiteHeader";
@@ -14,7 +13,7 @@ export const metadata = {
 
 export default function BlogPage() {
   return (
-    <CyberBackground>
+    <div className="min-h-dvh bg-background">
       <SiteHeader />
       <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
@@ -60,6 +59,6 @@ export default function BlogPage() {
         </div>
       </main>
       <SiteFooter />
-    </CyberBackground>
+    </div>
   );
 }

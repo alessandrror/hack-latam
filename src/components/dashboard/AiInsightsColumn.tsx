@@ -44,11 +44,11 @@ function confidenceLabelEs(c: AiInsightsConfidence): string {
 function priorityTone(p: AiInsightsTopAction["priority"]): string {
   switch (p) {
     case "critical":
-      return "border-red-200 bg-red-50 text-red-900";
+      return "border-red-500/40 bg-red-950/45 text-red-50";
     case "medium":
-      return "border-amber-200 bg-amber-50 text-amber-900";
+      return "border-amber-500/35 bg-amber-950/40 text-amber-50";
     case "low":
-      return "border-emerald-200 bg-emerald-50 text-emerald-900";
+      return "border-emerald-500/35 bg-emerald-950/35 text-emerald-50";
     default: {
       const _n: never = p;
       return _n;
@@ -111,7 +111,7 @@ export function AiInsightsColumn({
               }}
               title="Fuerza una nueva llamada al modelo ignorando la caché temporal (consumo/coste de tokens)."
               size="lg"
-              className="min-h-11 rounded-lg border-amber-300 bg-amber-50 px-4 py-2 text-amber-900 hover:bg-amber-100 disabled:opacity-45"
+              className="min-h-11 rounded-lg border-amber-500/50 bg-amber-950/50 px-4 py-2 text-amber-100 hover:bg-amber-900/50 disabled:opacity-45"
             >
               Nueva generación (coste modelo)
             </Button>
@@ -122,7 +122,9 @@ export function AiInsightsColumn({
       {servedFromCache && result && !loading ? (
         <p className="mt-3 rounded-lg border border-accent/25 bg-accent/5 p-3 text-xs leading-relaxed text-foreground">
           Resultado desde caché temporal (menos de 24h). Usa{" "}
-          <strong className="text-amber-800">nueva generación (coste modelo)</strong>
+          <strong className="text-amber-200">
+            nueva generación (coste modelo)
+          </strong>
           {" "}
           si quieres recomputar aunque coincida la clave.
         </p>
@@ -140,7 +142,7 @@ export function AiInsightsColumn({
 
       {error && !loading ? (
         <p
-          className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+          className="mt-4 rounded-lg border border-red-500/40 bg-red-950/45 p-3 text-sm text-red-100"
           role="alert"
         >
           {error}

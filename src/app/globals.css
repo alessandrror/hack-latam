@@ -1,28 +1,28 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Trust & Authority — defensive SMB dashboard (dark-first, WCAG-friendly contrast) */
 :root {
-  /* B2B clean slate / navy + sky accent */
   --radius: 0.75rem;
-  --background: #f8fafc;
-  --foreground: #020617;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #0f172a;
-  --primary-foreground: #f8fafc;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #0284c7;
-  --accent-foreground: #ffffff;
-  --destructive: #dc2626;
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
+  --popover: #1e293b;
+  --popover-foreground: #f1f5f9;
+  --primary: #f59e0b;
+  --primary-foreground: #0f172a;
+  --secondary: #334155;
+  --secondary-foreground: #f8fafc;
+  --muted: #272f42;
+  --muted-foreground: #cbd5e1;
+  --accent: #8b5cf6;
+  --accent-foreground: #faf5ff;
+  --destructive: #ef4444;
   --destructive-foreground: #fef2f2;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #0f172a;
+  --border: #334155;
+  --input: #334155;
+  --ring: #f59e0b;
 }
 
 @theme inline {
@@ -49,12 +49,22 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-ibm-plex-sans);
+  --font-mono: var(--font-ibm-plex-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

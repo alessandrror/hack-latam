@@ -58,7 +58,7 @@ export function TopNav({
             <Button
               type="submit"
               disabled={loading || !target.trim()}
-              className="min-h-10 cursor-pointer"
+              className="min-h-11 cursor-pointer min-w-[44px]"
             >
               {loading ? "Analizando…" : "Analizar"}
             </Button>
@@ -67,7 +67,7 @@ export function TopNav({
                 type="button"
                 variant="outline"
                 onClick={onNewScan}
-                className="min-h-10"
+                className="min-h-11 min-w-[44px]"
               >
                 Nuevo análisis
               </Button>
@@ -77,7 +77,7 @@ export function TopNav({
       </div>
       {error ? (
         <div
-          className="border-t border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800 sm:px-6"
+          className="border-t border-red-500/40 bg-red-950/55 px-4 py-2 text-sm text-red-50 sm:px-6"
           role="alert"
         >
           {error}

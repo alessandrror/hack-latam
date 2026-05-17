@@ -128,7 +128,7 @@ export function ScanFormPanel({
                   {opt.desc}
                 </p>
                 {opt.id === "deep" && !isAuthenticated ? (
-                  <p className="mt-2 text-[11px] leading-snug text-amber-800">
+                  <p className="mt-2 text-[11px] leading-snug text-amber-200">
                     <SignInButton mode="modal">
                       <span className="underline decoration-accent/70 underline-offset-2 transition-colors hover:text-accent">
                         Inicia sesión
@@ -171,7 +171,7 @@ export function ScanFormPanel({
         </Button>
 
         {deepRequiresAuth ? (
-          <p className="text-center text-sm text-amber-800" role="status">
+          <p className="text-center text-sm text-amber-200" role="status">
             Seleccionaste el modo{" "}
             <strong>profundo</strong>.{" "}
             <SignInButton mode="modal">
