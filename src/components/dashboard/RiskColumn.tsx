@@ -31,12 +31,12 @@ export function RiskColumn({
   const risks = riskFindings(findings);
 
   return (
-    <section className="flex flex-col rounded-xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-black/10">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-        Risk highlights
+    <section className="neon-panel flex flex-col p-4">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400/80">
+        Riesgos prioritarios
       </h2>
       <p className="mt-1 text-sm text-slate-400">
-        Critical and medium items that usually deserve attention first.
+        Hallazgos críticos y medios que suelen atenderse primero.
       </p>
 
       {risks.length === 0 ? (

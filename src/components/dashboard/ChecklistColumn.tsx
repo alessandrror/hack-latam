@@ -69,12 +69,12 @@ export function ChecklistColumn({
   const info = informationalFindings(findings, { excludeModuleChecks: true });
 
   return (
-    <section className="flex flex-col rounded-xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-black/10">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-        Technical checklist
+    <section className="neon-panel flex flex-col p-4">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400/80">
+        Checklist técnico
       </h2>
       <p className="mt-1 text-sm text-slate-400">
-        Email auth and HTTPS snapshot — derived from this scan&apos;s results.
+        Autenticación de correo y snapshot HTTPS según este escaneo.
       </p>
 
       {rows.length === 0 ? (
@@ -108,7 +108,7 @@ export function ChecklistColumn({
       )}
 
       <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-slate-500">
-        Other signals
+        Otras señales
       </h3>
       {info.length === 0 ? (
         <p className="mt-2 text-sm text-slate-500">

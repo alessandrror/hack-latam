@@ -23,7 +23,7 @@ function priorityTone(p: AiInsightsTopAction["priority"]): string {
 }
 
 const DEFAULT_PANEL_DISCLAIMER =
-  "AI text is explanatory only. These checks are passive and incomplete — verify findings in your own environment.";
+  "El texto de IA es orientativo. Estas comprobaciones son pasivas e incompletas — verifica los hallazgos en tu entorno.";
 
 export type AiInsightsColumnProps = {
   loading: boolean;
@@ -43,25 +43,25 @@ export function AiInsightsColumn({
   return (
     <section
       aria-label="AI insights"
-      className="flex flex-col rounded-xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-black/10"
+      className="neon-panel flex flex-col p-4"
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            AI insights
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400/80">
+            Insights con IA
           </h2>
           <p className="mt-1 text-sm text-slate-400">
-            Opt-in remediation summary from this scan&apos;s structured results
-            — no hostname lists are sent by default.
+            Resumen de remediación bajo demanda — sin listas de hostnames por
+            defecto.
           </p>
         </div>
         <button
           type="button"
           disabled={disabled || loading}
           onClick={onGenerate}
-          className="min-h-11 shrink-0 cursor-pointer rounded-lg border border-indigo-500/40 bg-indigo-600/85 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="min-h-11 shrink-0 cursor-pointer rounded-lg btn-gradient-neon px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? "Working…" : result ? "Regenerate" : "Generate"}
+          {loading ? "Generando…" : result ? "Regenerar" : "Generar"}
         </button>
       </div>
 

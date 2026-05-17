@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hack LATAM — SMB recon dashboard",
+  title: "Hack LATAM — Cyber Twin Protocol",
   description:
-    "Lightweight attack-surface reconnaissance with plain-language results for small businesses.",
+    "Reconocimiento pasivo de superficie de ataque para PYMEs. Detección de amenazas, blog y newsletter de ciberseguridad.",
 };
 
 export default function RootLayout({
@@ -25,10 +25,10 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-50 font-sans">
+      <body className="min-h-full flex flex-col bg-[#030308] text-slate-50 font-sans">
         {children}
       </body>
     </html>

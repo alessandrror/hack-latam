@@ -53,13 +53,13 @@ export function AssetsColumn({
   const list = orderedModules(modules);
 
   return (
-    <section className="flex flex-col rounded-xl border border-slate-800 bg-slate-900/60 p-4 shadow-lg shadow-black/10">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-        Assets &amp; state
+    <section className="neon-panel flex flex-col p-4">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400/80">
+        Activos y estado
       </h2>
       <div className="mt-3 rounded-lg border border-slate-800 bg-slate-950/50 p-3">
         <p className="text-xs text-slate-500">Target</p>
-        <p className="mt-1 font-mono text-sm font-medium break-all text-emerald-400/95">
+        <p className="mt-1 font-mono text-sm font-medium break-all text-cyan-300">
           {displayTarget || "—"}
         </p>
         {normalizedTarget ? (
@@ -112,7 +112,7 @@ export function AssetsColumn({
       )}
 
       <h3 className="mt-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
-        Discovered hostnames
+        Hostnames descubiertos
       </h3>
       {hostnames.length === 0 ? (
         <p className="mt-2 text-sm text-slate-500">
