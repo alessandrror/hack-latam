@@ -1,18 +1,61 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 :root {
-  --background: #030308;
-  --foreground: #f0f4ff;
+  /* App neon tokens (preserve for legacy classes / overrides). */
   --neon-cyan: #22d3ee;
   --neon-magenta: #e879f9;
   --neon-violet: #a78bfa;
   --panel: rgba(8, 12, 28, 0.72);
   --panel-border: rgba(34, 211, 238, 0.22);
+
+  /* Radius + semantic tokens for shadcn/base-nova (neon-tinted dark). */
+  --radius: 0.75rem;
+  --background: #030308;
+  --foreground: #f0f4ff;
+  --card: #060614;
+  --card-foreground: #f0f4ff;
+  --popover: #060614;
+  --popover-foreground: #f0f4ff;
+  --primary: #22d3ee;
+  --primary-foreground: #030308;
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --muted: rgba(30, 41, 59, 0.65);
+  --muted-foreground: #94a3b8;
+  --accent: rgba(34, 211, 238, 0.12);
+  --accent-foreground: #67e8f9;
+  --destructive: #ef4444;
+  --destructive-foreground: #fef2f2;
+  --border: rgba(34, 211, 238, 0.18);
+  --input: rgba(34, 211, 238, 0.35);
+  --ring: rgba(34, 211, 238, 0.45);
 }
 
 @theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

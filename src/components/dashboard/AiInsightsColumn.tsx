@@ -5,6 +5,9 @@ import type {
   AiInsightsTopAction,
 } from "@/types/ai-insights";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
 import { AiInsightsSkeleton } from "./AiInsightsSkeleton";
 
 function priorityTone(p: AiInsightsTopAction["priority"]): string {
@@ -30,7 +33,8 @@ export type AiInsightsColumnProps = {
   error: string | null;
   result: AiInsightsResponseBody | null;
   disabled?: boolean;
-  onGenerate: () => void;
+  servedFromCache?: boolean;
+  onGenerate: (opts?: { forceRefresh?: boolean }) => void | Promise<void>;
 };
 
 export function AiInsightsColumn({
@@ -38,13 +42,12 @@ export function AiInsightsColumn({
   error,
   result,
   disabled,
+  servedFromCache,
   onGenerate,
 }: AiInsightsColumnProps) {
   return (
-    <section
-      aria-label="AI insights"
-      className="neon-panel flex flex-col p-4"
-    >
+    <Card className="neon-panel gap-0 py-4 shadow-none ring-0" aria-label="AI insights">
+      <CardContent className="flex flex-col gap-4 p-4 px-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400/80">
@@ -55,15 +58,43 @@ export function AiInsightsColumn({
             defecto.
           </p>
         </div>
-        <button
-          type="button"
-          disabled={disabled || loading}
-          onClick={onGenerate}
-          className="min-h-11 shrink-0 cursor-pointer rounded-lg btn-gradient-neon px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading ? "Generando…" : result ? "Regenerar" : "Generar"}
-        </button>
+        <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-start">
+          <Button
+            type="button"
+            disabled={disabled || loading}
+            onClick={() => {
+              void onGenerate({ forceRefresh: false });
+            }}
+            size="lg"
+            className="btn-gradient-neon min-h-11 cursor-pointer rounded-lg px-4 py-2 text-sm"
+          >
+            {loading ? "Generando…" : result ? "Actualizar cache" : "Generar"}
+          </Button>
+          {result ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={disabled || loading}
+              onClick={() => {
+                void onGenerate({ forceRefresh: true });
+              }}
+              title="Ignora la caché de 24h y vuelve a llamar al modelo (consumo de tokens)."
+              size="lg"
+              className="min-h-11 rounded-lg border-amber-500/35 bg-amber-500/10 px-4 py-2 text-amber-100 hover:border-amber-400/50 hover:bg-amber-500/15 disabled:opacity-45 dark:bg-amber-500/10 dark:hover:bg-amber-500/15"
+            >
+              Nueva IA (tokens)
+            </Button>
+          ) : null}
+        </div>
       </div>
+
+      {servedFromCache && result && !loading ? (
+        <p className="mt-3 rounded-lg border border-cyan-500/25 bg-cyan-950/40 p-3 text-xs leading-relaxed text-cyan-100/95">
+          Resultado desde caché global (menos de 24h). Usa{" "}
+          <strong className="text-amber-200">Nueva IA (tokens)</strong> si quieres
+          recomputar aunque coincida la clave.
+        </p>
+      ) : null}
 
       <p className="mt-3 rounded-lg border border-slate-800/90 bg-slate-950/50 p-3 text-xs leading-relaxed text-slate-500">
         {DEFAULT_PANEL_DISCLAIMER}
@@ -154,6 +185,7 @@ export function AiInsightsColumn({
           ) : null}
         </div>
       ) : null}
-    </section>
+      </CardContent>
+    </Card>
   );
 }

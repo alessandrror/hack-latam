@@ -1,9 +1,22 @@
 import { classifyAndNormalizeTarget } from "@/lib/recon/normalize-target";
 import { runScanModules } from "@/lib/recon/run-scan";
 import type { ScanResponseBody } from "@/types/scan";
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+
+function parseScanMode(body: unknown): "quick" | "deep" {
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "mode" in body &&
+    (body as { mode: unknown }).mode === "deep"
+  ) {
+    return "deep";
+  }
+  return "quick";
+}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -11,6 +24,21 @@ export async function POST(request: Request) {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  const mode = parseScanMode(body);
+
+  if (mode === "deep") {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        {
+          error:
+            "Debes iniciar sesión para un análisis profundo. Prueba escaneo rápido como invitado o entra.",
+        },
+        { status: 401 },
+      );
+    }
   }
 
   const target =
@@ -43,6 +71,7 @@ export async function POST(request: Request) {
     inputKind: kind,
     findings,
     modules,
+    scanMode: mode,
   };
 
   return NextResponse.json(payload);

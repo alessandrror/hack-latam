@@ -5,11 +5,13 @@ import {
 } from "@/lib/ai/insights-prompt";
 import { callOpenRouterCompletion } from "@/lib/ai/openrouter";
 import type {
-  AiInsightsRequestBody,
   AiInsightsMinimalFindingInput,
   AiInsightsMinimalModuleInput,
+  AiInsightsRequestBody,
   AiInsightsResponseBody,
 } from "@/types/ai-insights";
+import { fetchMutation, fetchQuery } from "convex/nextjs";
+import { anyApi } from "convex/server";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -54,7 +56,9 @@ function parseRequestBody(payload: unknown): AiInsightsRequestBody | null {
 
   const normalizedTarget =
     typeof p.normalizedTarget === "string" ? p.normalizedTarget.trim() : "";
-  const inputKind = typeof p.inputKind === "string" ? p.inputKind.trim() : "";
+  const inputKind =
+    typeof p.inputKind === "string" ? p.inputKind.trim() : "";
+  const forceRefresh = p.forceRefresh === true;
   const totalHostnames =
     typeof p.totalHostnames === "number" && Number.isFinite(p.totalHostnames)
       ? Math.max(0, Math.floor(p.totalHostnames))
@@ -91,9 +95,13 @@ function parseRequestBody(payload: unknown): AiInsightsRequestBody | null {
       const r = row as Record<string, unknown>;
       if (typeof r.id !== "string" || typeof r.label !== "string") continue;
       if (typeof r.status !== "string") continue;
-      const detail =
-        typeof r.detail === "string" ? r.detail : undefined;
-      checklistRows.push({ id: r.id, label: r.label, status: r.status, detail });
+      const detail = typeof r.detail === "string" ? r.detail : undefined;
+      checklistRows.push({
+        id: r.id,
+        label: r.label,
+        status: r.status,
+        detail,
+      });
     }
   }
 
@@ -104,6 +112,7 @@ function parseRequestBody(payload: unknown): AiInsightsRequestBody | null {
   return {
     normalizedTarget,
     inputKind,
+    forceRefresh,
     totalHostnames,
     hostnameSampleShownCount,
     findings,
@@ -129,6 +138,45 @@ async function generateWithModel(params: {
 
   const parsed = parseInsightsModelOutput(rawText);
   return { ...parsed, modelUsed: model };
+}
+
+function convexUrl(): string | null {
+  const u =
+    typeof process.env.NEXT_PUBLIC_CONVEX_URL === "string"
+      ? process.env.NEXT_PUBLIC_CONVEX_URL.trim()
+      : "";
+  return u || null;
+}
+
+async function cacheWrite(
+  normalizedTarget: string,
+  payload: AiInsightsResponseBody & { modelUsed: string },
+): Promise<void> {
+  const secret = process.env.INSIGHTS_CACHE_WRITE_SECRET?.trim();
+  if (!secret) {
+    console.warn(
+      "INSIGHTS_CACHE_WRITE_SECRET unset — Convex AI cache was not persisted.",
+    );
+    return;
+  }
+  const baseUrl = convexUrl();
+  if (!baseUrl) {
+    return;
+  }
+
+  try {
+    const insightsBody = { ...payload };
+    delete insightsBody.cached;
+    const { modelUsed, ...insights } = insightsBody;
+    await fetchMutation(anyApi.aiInsightsCache.setCached, {
+      secret,
+      normalizedTarget,
+      insights,
+      ...(modelUsed ? { modelUsed } : {}),
+    });
+  } catch (e) {
+    console.error("Convex setCached failed:", e);
+  }
 }
 
 export async function POST(request: Request) {
@@ -167,6 +215,26 @@ export async function POST(request: Request) {
   const fallback =
     process.env.OPENROUTER_MODEL_FALLBACK?.trim() || "openai/gpt-4o-mini";
 
+  const baseUrl = convexUrl();
+  if (baseUrl && !validated.forceRefresh) {
+    try {
+      const hit = await fetchQuery(anyApi.aiInsightsCache.getCached, {
+        normalizedTarget: validated.normalizedTarget,
+        now: Date.now(),
+      });
+      if (hit) {
+        const body: AiInsightsResponseBody = {
+          ...hit.insights,
+          modelUsed: hit.modelUsed,
+          cached: true,
+        };
+        return NextResponse.json(body);
+      }
+    } catch (e) {
+      console.warn("Convex getCached unavailable; proceeding without cache:", e);
+    }
+  }
+
   const userContent = buildUserPrompt(validated);
 
   let lastErr: unknown;
@@ -176,6 +244,8 @@ export async function POST(request: Request) {
       model: primary,
       userContent,
     });
+
+    await cacheWrite(validated.normalizedTarget, primaryResult);
     return NextResponse.json(primaryResult);
   } catch (e) {
     lastErr = e;
@@ -193,10 +263,15 @@ export async function POST(request: Request) {
       model: fallback,
       userContent,
     });
+
+    await cacheWrite(validated.normalizedTarget, fallbackResult);
+
     return NextResponse.json(fallbackResult);
   } catch (e) {
     const msg =
-      e instanceof Error ? e.message : `${lastErr instanceof Error ? lastErr.message : "Primary failed"}, fallback failed.`;
+      e instanceof Error
+        ? e.message
+        : `${lastErr instanceof Error ? lastErr.message : "Primary failed"}, fallback failed.`;
     return NextResponse.json({ error: msg }, { status: 502 });
   }
 }

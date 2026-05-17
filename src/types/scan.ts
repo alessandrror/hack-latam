@@ -20,10 +20,14 @@ export interface ScanModuleResult {
   errorMessage?: string;
 }
 
+/** Client-requested scan depth; echoed by the scan API once auth is enforced. */
+export type ScanDepthMode = "quick" | "deep";
+
 export interface ScanResponseBody {
   target: string;
   normalizedTarget: string;
   inputKind: "domain" | "ip" | "unknown";
   findings: ScanFinding[];
   modules: ScanModuleResult[];
+  scanMode: ScanDepthMode;
 }

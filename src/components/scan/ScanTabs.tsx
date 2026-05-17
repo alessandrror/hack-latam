@@ -1,5 +1,8 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
 export type ScanTabId =
   | "scan"
   | "assets"
@@ -41,21 +44,25 @@ export function ScanTabs({
         const isActive = active === tab.id;
 
         return (
-          <button
+          <Button
             key={tab.id}
             type="button"
             role="tab"
             aria-selected={isActive}
             disabled={tabDisabled}
             onClick={() => onChange(tab.id)}
-            className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
+            variant="outline"
+            size="lg"
+            className={cn(
+              "h-auto shrink-0 rounded-xl border px-4 py-2.5 shadow-none hover:bg-transparent",
               isActive
                 ? "tab-active-glow"
-                : "border-slate-700/80 bg-slate-900/40 text-slate-400 hover:border-cyan-500/25 hover:text-slate-200"
-            } disabled:cursor-not-allowed disabled:opacity-40`}
+                : "border-slate-700/80 bg-slate-900/40 text-slate-400 hover:border-cyan-500/25 hover:text-slate-200 dark:border-slate-700/80 dark:bg-slate-900/40 dark:hover:bg-slate-900/60",
+              tabDisabled ? "opacity-40" : null,
+            )}
           >
             {tab.label}
-          </button>
+          </Button>
         );
       })}
     </div>

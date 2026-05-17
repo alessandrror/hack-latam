@@ -1,6 +1,8 @@
 import { MODULE_DISPLAY_ORDER } from "@/lib/dashboard/findings";
 import type { ScanModuleResult } from "@/types/scan";
 
+import { Card, CardContent } from "@/components/ui/card";
+
 function moduleStatusDot(status: ScanModuleResult["status"]): string {
   switch (status) {
     case "ok":
@@ -53,7 +55,8 @@ export function AssetsColumn({
   const list = orderedModules(modules);
 
   return (
-    <section className="neon-panel flex flex-col p-4">
+    <Card className="neon-panel gap-0 py-0 shadow-none ring-0">
+      <CardContent className="flex flex-col gap-4 p-4">
       <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400/80">
         Activos y estado
       </h2>
@@ -136,6 +139,7 @@ export function AssetsColumn({
           </ul>
         </div>
       )}
-    </section>
+      </CardContent>
+    </Card>
   );
 }
