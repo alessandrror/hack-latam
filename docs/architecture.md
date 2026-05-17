@@ -12,8 +12,11 @@ Key entry points:
 |------|------|
 | Home / scan form UI | [`src/app/page.tsx`](../src/app/page.tsx) |
 | Scan API | [`src/app/api/scan/route.ts`](../src/app/api/scan/route.ts) |
+| Module runner | [`src/lib/recon/run-scan.ts`](../src/lib/recon/run-scan.ts) |
 | Target parsing | [`src/lib/recon/normalize-target.ts`](../src/lib/recon/normalize-target.ts) |
 | Subdomain recon | [`src/lib/recon/subdomains.ts`](../src/lib/recon/subdomains.ts) |
+| DNS email-auth checks | [`src/lib/recon/dns-health.ts`](../src/lib/recon/dns-health.ts) |
+| TLS certificate inspection | [`src/lib/recon/tls-check.ts`](../src/lib/recon/tls-check.ts) |
 | Shared types | [`src/types/scan.ts`](../src/types/scan.ts) |
 
 ## Request flow
@@ -24,22 +27,16 @@ flowchart TD
   uiNode[Home page form POST fetch]
   apiNode[POST /api/scan]
   normNode[classifyAndNormalizeTarget]
-  reconNode[Recon modules]
+  runNode[runScanModules parallel]
   payNode[ScanResponseBody JSON]
   renderNode[UI renders findings and modules]
 
   userNode --> uiNode
   uiNode --> apiNode
   apiNode --> normNode
-  apiNode --> reconNode
-  reconNode --> payNode
-  payNode --> renderNode
-
-  normNode -->|inputKind ip| skipNode[subdomain_enum skipped]
-  normNode -->|inputKind domain| runNode[enumerateSubdomainsFromCrtSh]
-
-  skipNode --> payNode
+  normNode --> runNode
   runNode --> payNode
+  payNode --> renderNode
 ```
 
 ## Scan pipeline (today)
@@ -47,19 +44,20 @@ flowchart TD
 1. **Parse JSON body** — invalid JSON → `400` + `"Invalid JSON body."`.
 2. **Extract `target`** string (or treat as empty).
 3. **`classifyAndNormalizeTarget`** — if `unknown` or empty → `400` with user-facing message.
-4. **Branch on `inputKind`:**
-   - **`ip`**: append one `ScanModuleResult` for `subdomain_enum` with `status: "skipped"` and explanation; **no** crt.sh call; `findings` stays empty.
-   - **`domain`**: call `enumerateSubdomainsFromCrtSh(normalized)`; merge returned `ScanFinding[]` into `findings`; record module `ok` or `error` with `durationMs` / `errorMessage`.
-5. **Return** `ScanResponseBody` as JSON.
+4. **`runScanModules`** — for each registered module:
+   - If the module does not apply to `inputKind` (e.g. IP-only targets) → `ScanModuleResult` with `status: "skipped"` + reason; **no** findings from that module.
+   - Else run the module; on success attach `durationMs`; on thrown error → `status: "error"` with `errorMessage` (other modules still complete).
+5. **Return** `ScanResponseBody` as JSON (**one** payload; no streaming).
 
 ## UI behavior
 
 - Client component posts `{ target }` to `/api/scan`.
-- On success, renders **Modules** list and **Findings** list; hostname metadata may show first **200** names with total count (see `subdomains.ts`).
+- **Modules**: status, timing, skip/error messages.
+- **Findings**: sorted roughly by module (`subdomain_enum` → `dns_health` → `tls_check`). Host list for CT results; structured detail panels for DNS and TLS metadata when present.
 
 ## Future shape (not implemented)
 
-[CONTEXT.md](../CONTEXT.md) and [init.md](../init.md) describe **parallel modules** and **streaming** partial results. The current codebase returns **one** JSON payload per request; extending this would likely mean Server-Sent Events, chunked responses, or polling — not present yet.
+[CONTEXT.md](../CONTEXT.md) and [init.md](../init.md) describe **streaming** partial results and a richer dashboard. The codebase still returns **one** JSON payload per request; extending would likely mean Server-Sent Events, chunked responses, or polling.
 
 ## Related
 

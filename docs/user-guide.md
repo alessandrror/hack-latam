@@ -23,7 +23,9 @@ Each row is one recon **module**:
 
 - **ok** — completed successfully.
 - **error** — failed (message explains why when available).
-- **skipped** — not applicable for this input (e.g. subdomain discovery from cert logs needs a **domain**, not a raw IP).
+- **skipped** — not applicable for this input (domain-only checks are skipped when you enter a bare **IPv4**).
+
+Implemented modules are listed in [Recon modules](recon-modules.md): `subdomain_enum`, `dns_health`, `tls_check`.
 
 ### Findings
 
@@ -32,21 +34,25 @@ Each finding includes:
 - **Severity** — `critical`, `medium`, or `low` (see [Severity system](severity-system.md)).
 - **Title** — short headline.
 - **Explanation** — one plain-language line about why it matters.
-- **Metadata** (optional) — e.g. a scrollable list of hostnames; lists may be **truncated** for display.
+- **Metadata** (optional):
+  - **Subdomains**: scrollable hostname list (may be truncated for display).
+  - **DNS / TLS**: key-value snapshots (presence of SPF/DMARC, DKIM selectors hit, certificate dates, issuer).
 
 ## What “passive” means here
 
-The app is designed for **defense / resilience**: it uses **public datasets and normal lookups**, not exploitation. Details: [Threat model](threat-model.md) and [Privacy & data sources](privacy-and-data-sources.md).
+The app is designed for **defense / resilience**: it uses **public datasets, DNS lookups, and a normal HTTPS handshake** on your target — not exploitation. Details: [Threat model](threat-model.md) and [Privacy & data sources](privacy-and-data-sources.md).
 
 ## Limitations you should know
 
 - **Not every asset** appears in public cert logs; **zero subdomains** in crt.sh does not guarantee you have none.
-- **Planned modules** (ports, SSL labs, DNS auth records, etc.) are described in [Recon modules](recon-modules.md) — many are **not implemented** in code yet.
+- **DKIM detection** probes only **common selector names** — your provider might use others; absence here is **not** proof DKIM is off.
+- **TLS check** connects to port **443** only; expired or mismatched certs on **other** ports are out of scope.
+- **Roadmap** items (ports, WHOIS/HIBP, deep SSL grading, streaming UI) remain future work — see [Recon modules](recon-modules.md).
 
 ## FAQ
 
-**Why did subdomain scan skip for my IP?**  
-Certificate transparency subdomain discovery is keyed off a **domain name**. For an IP-only input, that module is intentionally skipped with an explanation.
+**Why did subdomain / DNS / TLS skip for my IP?**  
+Those steps are keyed to a **domain name**. For IP-only input, they are intentionally skipped with an explanation.
 
 **Is this legal / ethical?**  
 Only use it on **targets you’re allowed to assess**. The tool is meant for **authorized** owners or educators. See [Threat model](threat-model.md).

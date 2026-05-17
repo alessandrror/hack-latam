@@ -42,3 +42,5 @@ Fine. Here is the architecture I propose for the hackathon:
 ---
 
 Do you want me to start with the project scaffold (folder structure, API routes, first functional recon module)?
+
+**Update (current repo):** new modules register in [`src/lib/recon/run-scan.ts`](src/lib/recon/run-scan.ts); the API route delegates to [`runScanModules`](src/lib/recon/run-scan.ts).

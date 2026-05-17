@@ -1,7 +1,13 @@
 "use client";
 
-import type { ScanResponseBody, Severity } from "@/types/scan";
-import { useState, type FormEvent } from "react";
+import type { ScanFinding, ScanResponseBody, Severity } from "@/types/scan";
+import { useMemo, useState, type FormEvent } from "react";
+
+const MODULE_DISPLAY_ORDER = [
+  "subdomain_enum",
+  "dns_health",
+  "tls_check",
+] as const;
 
 function severityBadgeClasses(severity: Severity): string {
   switch (severity) {
@@ -18,11 +24,140 @@ function severityBadgeClasses(severity: Severity): string {
   }
 }
 
+function sortedFindings(findings: ScanFinding[]): ScanFinding[] {
+  const rank = (m: string) => {
+    const i = MODULE_DISPLAY_ORDER.indexOf(
+      m as (typeof MODULE_DISPLAY_ORDER)[number],
+    );
+    return i === -1 ? MODULE_DISPLAY_ORDER.length : i;
+  };
+  return [...findings].sort((a, b) => {
+    const byModule = rank(a.module) - rank(b.module);
+    if (byModule !== 0) return byModule;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+function FindingMetadataBlocks({ finding }: { finding: ScanFinding }) {
+  const raw = finding.metadata;
+  if (!raw || typeof raw !== "object") return null;
+
+  if (finding.module === "dns_health") {
+    const m = raw as Record<string, unknown>;
+    const check = typeof m.check === "string" ? m.check : null;
+    if (!check) return null;
+
+    const present = typeof m.present === "boolean" ? m.present : null;
+    const host = typeof m.host === "string" ? m.host : null;
+    const summary = typeof m.summary === "string" ? m.summary : null;
+    const matched =
+      Array.isArray(m.selectorsMatched) &&
+      m.selectorsMatched.every((x) => typeof x === "string")
+        ? (m.selectorsMatched as string[])
+        : null;
+
+    return (
+      <div className="mt-3 rounded-lg border border-zinc-100 bg-zinc-50 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-950">
+        <p className="font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          DNS detail — {check}
+        </p>
+        <dl className="mt-2 grid gap-1 font-mono text-zinc-800 dark:text-zinc-200 [@media(min-width:480px)]:grid-cols-[auto_1fr] [@media(min-width:480px)]:gap-x-3">
+          {present !== null ? (
+            <>
+              <dt className="text-zinc-500 dark:text-zinc-500">Record</dt>
+              <dd>{present ? "Present" : "Not found"}</dd>
+            </>
+          ) : null}
+          {host ? (
+            <>
+              <dt className="text-zinc-500 dark:text-zinc-500">Lookup</dt>
+              <dd className="break-all">{host}</dd>
+            </>
+          ) : null}
+          {summary ? (
+            <>
+              <dt className="text-zinc-500 dark:text-zinc-500">Notes</dt>
+              <dd>{summary}</dd>
+            </>
+          ) : null}
+          {matched && matched.length > 0 ? (
+            <>
+              <dt className="text-zinc-500 dark:text-zinc-500">Selectors</dt>
+              <dd className="break-all">{matched.join(", ")}</dd>
+            </>
+          ) : null}
+        </dl>
+      </div>
+    );
+  }
+
+  if (finding.module === "tls_check") {
+    const m = raw as Record<string, unknown>;
+    const validFrom = typeof m.validFrom === "string" ? m.validFrom : null;
+    const validTo = typeof m.validTo === "string" ? m.validTo : null;
+    const issuer = typeof m.issuer === "string" ? m.issuer : null;
+    const hostname = typeof m.hostname === "string" ? m.hostname : null;
+    const daysRemaining =
+      typeof m.daysRemaining === "number" ? m.daysRemaining : null;
+
+    if (!validFrom && !validTo && !issuer && !hostname && daysRemaining == null) {
+      return null;
+    }
+
+    return (
+      <div className="mt-3 rounded-lg border border-zinc-100 bg-zinc-50 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-950">
+        <p className="font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          Certificate snapshot
+        </p>
+        <dl className="mt-2 grid gap-1 font-mono text-zinc-800 dark:text-zinc-200 [@media(min-width:480px)]:grid-cols-[auto_1fr] [@media(min-width:480px)]:gap-x-3">
+          {hostname ? (
+            <>
+              <dt className="text-zinc-500 dark:text-zinc-500">Host</dt>
+              <dd className="break-all">{hostname}</dd>
+            </>
+          ) : null}
+          {validFrom ? (
+            <>
+              <dt className="text-zinc-500 dark:text-zinc-500">Valid from</dt>
+              <dd>{validFrom}</dd>
+            </>
+          ) : null}
+          {validTo ? (
+            <>
+              <dt className="text-zinc-500 dark:text-zinc-500">Valid until</dt>
+              <dd>{validTo}</dd>
+            </>
+          ) : null}
+          {daysRemaining !== null ? (
+            <>
+              <dt className="text-zinc-500 dark:text-zinc-500">Days left</dt>
+              <dd>{daysRemaining}</dd>
+            </>
+          ) : null}
+          {issuer ? (
+            <>
+              <dt className="text-zinc-500 dark:text-zinc-500">Issuer</dt>
+              <dd className="break-all">{issuer}</dd>
+            </>
+          ) : null}
+        </dl>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 export default function Home() {
   const [target, setTarget] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScanResponseBody | null>(null);
+
+  const orderedFindings = useMemo(
+    () => (result ? sortedFindings(result.findings) : []),
+    [result],
+  );
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,8 +201,9 @@ export default function Home() {
             See what the internet already knows about a domain
           </h1>
           <p className="text-lg leading-relaxed text-zinc-600 dark:text-zinc-300">
-            Start with a domain or URL. We run lightweight public checks (starting
-            with certificate transparency) and explain results in plain language.
+            Start with a domain or URL. We run passive checks — certificate transparency
+            names, DNS email-auth signals (SPF / DMARC / DKIM hints), and a simple HTTPS
+            certificate readout — explained in plain language.
           </p>
         </header>
 
@@ -146,13 +282,13 @@ export default function Home() {
               <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                 Findings
               </h3>
-              {result.findings.length === 0 ? (
+              {orderedFindings.length === 0 ? (
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
                   No findings for this scan yet (some modules may be skipped depending on input).
                 </p>
               ) : (
                 <ul className="mt-3 space-y-4">
-                  {result.findings.map((finding) => {
+                  {orderedFindings.map((finding) => {
                     const hostnames =
                       Array.isArray(finding.metadata?.hostnames) &&
                       finding.metadata.hostnames.every((h) => typeof h === "string")
@@ -197,6 +333,7 @@ export default function Home() {
                             </ul>
                           </div>
                         ) : null}
+                        <FindingMetadataBlocks finding={finding} />
                       </li>
                     );
                   })}

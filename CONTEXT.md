@@ -2,9 +2,26 @@
 
 ## What is this?
 
-A web app that helps small businesses (PYMEs) with no security team understand their external attack surface. The user inputs a domain, IP range, or company name and gets a passive reconnaissance report with findings in plain language.
+A web app that helps small businesses (PYMEs) with no security team understand their **external attack surface** from publicly visible signals. Users enter **a domain or URL** (and the API accepts a bare **IPv4** for partial checks). The backend runs **passive** recon and returns findings in plain language.
 
 Built for the **def/acc track** of a hackathon — the goal is to make people and institutions more resilient, not to build offensive tooling.
+
+## Phase 1 (what we ship today)
+
+1. **Input** — **Domain or URL**, or **`IPv4` in the API**. Free-text **company names** remain **unsupported** (`400` via normalization); resolving names to domains is **roadmap**.
+2. **Parallel recon modules** — multiple modules run **in parallel** per scan; failures are **isolated per module** (others still return results).
+3. **Single HTTP response** — one `POST /api/scan` returns all module statuses and findings. **Streaming** partial results is **roadmap**.
+4. **Passive checks** — public certificate transparency (`crt.sh`), **DNS lookups** for email-auth signals (SPF, DMARC, DKIM hints), and a **client TLS handshake on port 443** to read the presented certificate (**not** full SSL Labs–style grading).
+
+See [docs/recon-modules.md](docs/recon-modules.md) for the exact module list vs roadmap.
+
+## Roadmap (broader vision)
+
+| Direction | Notes |
+|-----------|------|
+| **Richer input** | IP ranges, **company-name → domain** resolution |
+| **More modules** | Shodan, SSL Labs, WHOIS/HIBP, etc. |
+| **Progressive UX** | Live progress bar, streaming/SSE/polling |
 
 ## Stack
 
@@ -12,40 +29,23 @@ Built for the **def/acc track** of a hackathon — the goal is to make people an
 - **Styling:** Tailwind CSS
 - **Language:** TypeScript
 
-## Core Features
+## Recon Modules (conceptual backlog)
 
-1. **Flexible input** — accepts a domain (`example.com`), IP / IP range, or company name
-2. **Parallel recon modules** — each runs independently and streams results back
-3. **Plain-language findings** — every result has a severity tag and a one-line explanation for non-technical users
-
-## Recon Modules
-
-| Module | What it does | Source |
-|---|---|---|
-| Subdomain enum | Discovers active subdomains | crt.sh API + DNS lookup |
-| Port scan | Open ports on discovered IPs | Shodan API |
-| SSL/TLS check | Expired or misconfigured certs | SSL Labs API |
-| DNS health | SPF, DMARC, DKIM presence | Direct DNS queries |
-| WHOIS / ASN | Registrant info, hosting provider | WHOIS API |
-| Exposed services | RDP, FTP, Telnet exposed | Shodan API |
-| Leaked credentials | Emails found in breaches | HaveIBeenPwned API |
+Beyond today’s implementations, longer-term targets include ports/exposed services (**Shodan**), richer TLS analysis (**SSL Labs**), WHOIS/ASN, and breach lookups — see [docs/recon-modules.md](docs/recon-modules.md).
 
 ## Severity System
 
-- 🔴 **Critical** — immediate risk, exposed service or leaked credentials
-- 🟡 **Medium** — misconfiguration that could be exploited
-- 🟢 **Low** — missing best practice, low direct risk
+- **Critical** — immediate risk (e.g. expired certificate on the inspected host, leaked credentials once that module exists)
+- **Medium** — misconfiguration or gap that materially increases abuse risk
+- **Low** — informational, best practice, or positive signal when present
 
 ## UI Structure
 
-- **Top nav** — logo, domain input + scan button, scan status indicator
-- **Scan progress bar** — full width, animates during active scan
-- **Left column** — assets discovered (subdomains, IPs, open ports)
-- **Center column** — risk summary + findings list
-- **Right column** — SSL & DNS health checklist
-- **Footer note** — "All scans are passive and non-intrusive."
+**Implemented today:** a single-column flow — form → **Modules** list → **Findings** list with badges and optional detail blocks.
 
-## Design Tokens
+**Vision (later):** top nav + progress bar + three-column layout (assets / risk / SSL & DNS checklist) as described historically in product sketches.
+
+### Design Tokens (target aesthetic)
 
 - Background: `bg-gray-950`
 - Accent: `text-green-400`, `border-green-500`
@@ -55,6 +55,6 @@ Built for the **def/acc track** of a hackathon — the goal is to make people an
 
 ## Important Constraints
 
-- All scans must be **passive** (no exploitation, no active probing beyond standard recon)
-- Findings must include a plain-language description — no raw technical jargon shown to the user
-- The app must work as a demo with real API calls during the hackathon presentation
+- All scans must be **passive** (no exploitation, no disruptive scanning beyond standard recon)
+- Findings include a plain-language explanation — minimize raw jargon in the UI
+- The demo should support **live** outbound calls where possible (crt.sh + DNS + target HTTPS today)

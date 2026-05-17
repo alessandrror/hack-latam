@@ -34,13 +34,34 @@ Common messages (from [`src/lib/recon/subdomains.ts`](../src/lib/recon/subdomain
 
 **Mitigation:** Retry later; try another domain to isolate crt.sh vs your network.
 
-## Module `subdomain_enum` → `skipped`
+## Module hostname-based skips
 
-**Expected** when `inputKind` is **`ip`**. Use a **domain name** to run certificate transparency lookup.
+**Expected** when `inputKind` is **`ip`**: **`subdomain_enum`**, **`dns_health`**, and **`tls_check`** all register **`skipped`**. Enter a **domain name** or URL to run them.
 
-## Empty `findings` but module `ok`
+## Module `dns_health` → `error`
 
-Possible when the module returns a finding with **zero hostnames** — you should still get one **finding** explaining “none in cert logs” for domains. If `findings` is empty and module is `ok`, verify you are not misreading a skipped path or failed parse (should not happen on success path).
+Rare for pure DNS lookups; **`ENOTFOUND`** / timeouts / resolver outages can surface.
+
+**Mitigation:** Retry; verify server network/DNS egress; rule out typo in apex domain input.
+
+## Module `tls_check` → `error`
+
+Typical causes: **no HTTPS** on `:443`, **firewall**/cloud blocking outbound TLS from your dev machine, wrong hostname vs production cert only on `www`.
+
+| Symptom | Likely cause |
+|---------|----------------|
+| `ECONNREFUSED` | Nothing listening on 443 |
+| `TLS connection timed out` | 15s limit or network block |
+| `certificate has expired` in stack | Unexpected — usually caught as handshake issue |
+
+**Mitigation:** Confirm the domain serves TLS on **443** from general internet.
+
+## Empty `findings`
+
+- **`inputKind: "ip"`** — expected: all hostname modules are **`skipped`** and **`findings`** is **`[]`**; use a **domain**.
+- **`inputKind: "domain"`** with all modules **`ok`** — expect **five or more findings** normally (certificate transparency footprint + SPF/DMARC/DKIM + at least one TLS row; TLS may attach extra rows for mismatches/chains).
+
+If **`ok`** domains return **`findings: []`**, inspect server logs — inconsistent with current modules.
 
 ## Development tips
 

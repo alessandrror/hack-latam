@@ -24,7 +24,7 @@ See also: [User guide](user-guide.md), [Recon modules](recon-modules.md).
 
 ## Scope disclaimer
 
-This tool surfaces **public or passively observable** information. It does **not** prove completeness (“no finding” ≠ “perfectly secure”), and it does **not** replace a full assessment or pen test.
+This tool surfaces **public or passively observable** information (**certificate transparency, DNS lookups, and a TLS read on HTTPS port 443**). It does **not** prove completeness (“no finding” ≠ “perfectly secure”), and it does **not** replace a full assessment or pen test.
 
 ## Related docs
 

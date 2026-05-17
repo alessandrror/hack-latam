@@ -12,34 +12,54 @@ Every **`ScanFinding`** must include one of these values. The UI renders colored
 
 From [CONTEXT.md](../CONTEXT.md):
 
-- **Critical** — immediate risk (e.g. exposed high-risk service, leaked credentials).
-- **Medium** — misconfiguration that could be exploited.
-- **Low** — missing best practice or informational exposure with lower direct impact.
+- **Critical** — immediate risk (e.g. expired HTTPS certificate as presented on port **443**, clear breach/exposure signals once added).
+- **Medium** — misconfiguration or gap that increases abuse/spoofing risk or needs prompt attention before expiry warnings.
+- **Low** — informational, positive (“record present”), footprint-only signals, or high-uncertainty checks.
 
-## What the code does today
+## Module rules (today)
 
-Only **`subdomain_enum`** (crt.sh) emits findings. Its logic uses **`medium` and `low` only** — not `critical`.
+### `subdomain_enum` (crt.sh)
 
 Source: [`src/lib/recon/subdomains.ts`](../src/lib/recon/subdomains.ts) — `severityForSubdomainCount`:
 
 | Hostname count (after dedupe) | Severity |
 |-------------------------------|----------|
-| **0** | `low` — “no names in cert logs” is informational; not proof of safety. |
-| **1–50** | `low` — “several names” / larger footprint to monitor. |
-| **> 50** | `medium` — “many names” — more surface area for weak configs. |
+| **0** | `low` |
+| **1–50** | `low` |
+| **> 50** | `medium` |
 
-**Examples**
+### `dns_health`
 
-- **Low:** “`5` hostname(s) found via certificate transparency” — more DNS names to maintain; not a vulnerability by itself.
-- **Medium:** “`80` hostname(s) found…” — same data source, higher count upgrades narrative urgency.
+Source: [`src/lib/recon/dns-health.ts`](../src/lib/recon/dns-health.ts):
 
-## `critical` today
+| Finding | Severity |
+|---------|----------|
+| SPF **present** | `low` |
+| SPF **missing** | `medium` |
+| DMARC **present** | `low` |
+| DMARC **missing** | `medium` |
+| DKIM (common selectors only) — **detected / not detected** | `low` (not detected is informational; provider may use other selectors) |
 
-The type allows **`critical`** for future modules (e.g. confirmed leaked credentials or clearly dangerous exposures). **No current module assigns `critical`.** If you add a module that sets `critical`, document the rule next to that module in [Recon modules](recon-modules.md).
+### `tls_check`
+
+Source: [`src/lib/recon/tls-check.ts`](../src/lib/recon/tls-check.ts):
+
+| Condition | Typical severity |
+|-----------|------------------|
+| Certificate appears **already expired** | **`critical`** |
+| Expires in **≤14 or ≤30 days** | `medium` |
+| Valid with comfortable window | `low` |
+| Hostname mismatch vs cert names | `medium` |
+| Verification / chain warning (`authorizationError`) | `medium` |
+| No readable leaf certificate | `medium` |
+
+## `critical` usage
+
+Reserved for unmistakable breakage or imminent harm. **`tls_check` sets `critical` when the observed leaf validity end is already in the past.** Roadmap modules (e.g. confirmed leaks, dangerous exposures) should document rules in [Recon modules](recon-modules.md).
 
 ## User-facing copy
 
-Findings always include a **`title`** and **`explanation`** meant for non-specialists. Prefer “what to do next” in future modules (rotate creds, close port, fix DMARC) over raw CVE jargon.
+Findings include **`title`** and **`explanation`** for non-specialists. Prefer “what to do next” (renew cert, publish DMARC) over CVE jargon alone.
 
 ## Related
 

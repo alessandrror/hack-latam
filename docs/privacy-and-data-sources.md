@@ -4,32 +4,38 @@
 
 | Destination | When | What is sent |
 |-------------|------|--------------|
-| **crt.sh** | `inputKind === "domain"` and `subdomain_enum` runs | HTTPS GET to `https://crt.sh/?q={encodeURIComponent("%.domain")}&output=json` |
+| **crt.sh** | `inputKind === "domain"` and `subdomain_enum` runs | HTTPS GET `https://crt.sh/?q={encodeURIComponent("%.domain")}&output=json` |
+| **DNS resolver** | `dns_health` runs for **domains** | TXT (and transitive resolver behavior) lookups for apex, `_dmarc.{domain}`, `{selector}._domainkey.{domain}` — powered by Node `dns` / host resolver config |
+| **Target hostname :443** | `tls_check` runs for **domains** | Outbound TLS client handshake to **`{normalized domain}:443`** (SNI = same hostname); certificate bytes processed server-side |
 
-The **User-Agent** header is set to `hack-latam-recon/0.1 (+https://github.com/)` in [`src/lib/recon/subdomains.ts`](../src/lib/recon/subdomains.ts). You may want to replace the URL with your real **repository or contact** page for responsible disclosure.
+The **User-Agent** for crt.sh is set in [`src/lib/recon/subdomains.ts`](../src/lib/recon/subdomains.ts). Replace `+https://github.com/` with your real **repository or contact** URL when you publish.
 
-**IPv4-only input:** crt.sh is **not** called; the subdomain module is **skipped**.
+**IPv4-only input:** crt.sh is **not** called; subdomain/DNS/TLS hostname modules register **skipped** (see [`src/lib/recon/run-scan.ts`](../src/lib/recon/run-scan.ts)).
 
 ## What crt.sh returns
 
-Public JSON listing certificate log entries (fields such as `name_value`, `common_name`). The app parses hostnames and **does not** forward raw certificate rows to the browser except derived **hostname strings** and counts inside `findings[].metadata`.
+Public JSON listing certificate log entries (`name_value`, `common_name`, etc.). The app parses hostnames and **does not** forward raw CT rows wholesale — only derived **hostname strings**, counts, and findings metadata.
+
+## What DNS / TLS return
+
+Resolver answers and certificate fields are distilled into **`ScanFinding` metadata** (presence flags, summaries, issuer, validity window). Operators should assume scan targets may appear in resolver logs/TLS firewall logs wherever the Next.js server runs.
 
 ## Data retained
 
 - **No database** in this codebase — results exist in memory for the HTTP response and in the browser until refresh.
-- Server logs (Next.js / hosting) may still record requests — configure hosting appropriately for demos.
+- Server logs (Next.js / hosting) may still record requests — configure appropriately for demos.
 
 ## Recommended practices (operators)
 
 1. **Scan only assets you own or have permission to assess.**
 2. **Hackathon demos:** prefer domains you control or public examples agreed with organizers.
 3. **Do not paste secrets** into the target field (not useful, could leak in logs).
-4. If you add APIs requiring keys (Shodan, HIBP, etc.), store keys in environment variables and add **`.env.example`** without real secrets.
+4. If you add APIs requiring keys (Shodan, HIBP, …), store them in env vars and add **`.env.example`** — not required for the integrations above.
 
 ## Limitations & third-party dependency
 
-- **crt.sh** is a free public service; it can be slow, rate-limited, or temporarily error-prone — users see module `error` with a message.
-- **Completeness:** certificate transparency does not list all names ever used; some infra never appears in CT logs.
+- **crt.sh** is a free community service — can be slow or error-prone; users see module `error` with a message.
+- **Completeness:** CT does not list every hostname; DNS/DKIM checks use heuristics; TLS reads **443** only.
 
 ## Related
 

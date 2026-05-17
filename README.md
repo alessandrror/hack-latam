@@ -37,14 +37,14 @@ yarn install && yarn dev
 
 ## Passive & non-intrusive
 
-Scans use **public data and standard queries** (today: certificate transparency via [crt.sh](https://crt.sh/)). There is **no exploitation**, no credential stuffing, and no intent to disrupt targets. See [docs/threat-model.md](docs/threat-model.md) and [docs/privacy-and-data-sources.md](docs/privacy-and-data-sources.md).
+Scans use **public data, DNS lookups, and a normal HTTPS handshake on port 443** to surface certificate transparency (**[crt.sh](https://crt.sh/)**), SPF/DMARC/DKIM hints (`dns_health`), and leaf TLS metadata (`tls_check`). **No exploitation**, credential stuffing, or disruptive scanning intent. See [docs/threat-model.md](docs/threat-model.md) and [docs/privacy-and-data-sources.md](docs/privacy-and-data-sources.md).
 
 ## Limitations today
 
-- **Implemented:** subdomain / hostname discovery from **crt.sh** only (`subdomain_enum`).
-- **Planned** (see [CONTEXT.md](CONTEXT.md), [init.md](init.md), [docs/recon-modules.md](docs/recon-modules.md)): port / exposed-service signals (e.g. Shodan), SSL/TLS review, DNS email-auth checks, WHOIS/ASN, breach lookups — **not wired in this repo yet**.
-- Streaming UI updates are **not** implemented; the UI waits for one `POST /api/scan` response.
-- No `.env.example` yet — current integration uses a **public** API only.
+- **Implemented:** certificate transparency subdomain names (`subdomain_enum`), passive DNS email-auth snapshots (`dns_health`), and **`443`** TLS certificate inspection (`tls_check`). See [docs/recon-modules.md](docs/recon-modules.md).
+- **Roadmap** (CONTEXT / init / recon-modules): richer inputs (company name resolution, IP ranges), Shodan, SSL Labs–style grading, WHOIS/HIBP, streaming UI — not all wired here yet.
+- **Streaming** UI / partial SSE updates are **not** implemented — one JSON response per `POST /api/scan`.
+- **No `.env.example` yet** — current modules use public crt.sh, system DNS, and outbound TLS only.
 
 ## Documentation
 

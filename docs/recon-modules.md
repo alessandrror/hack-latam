@@ -2,38 +2,55 @@
 
 This page separates **what the code runs today** from the **roadmap** in [CONTEXT.md](../CONTEXT.md) and [init.md](../init.md).
 
+Orchestration: modules are registered and run **in parallel** from [`src/lib/recon/run-scan.ts`](../src/lib/recon/run-scan.ts) (individual failures surface as module `error`).
+
 ## Implemented today
 
-| Module name (code) | Status | What it does | External source |
-|--------------------|--------|--------------|-----------------|
-| `subdomain_enum` | **Live** | Collects hostnames seen in public **certificate transparency** logs for `%.{domain}` | [crt.sh](https://crt.sh/) JSON API |
+| Module name (code) | Status | What it does | Source |
+|--------------------|--------|--------------|--------|
+| `subdomain_enum` | **Live** | Hostnames seen in public **certificate transparency** for `%.{domain}` | [crt.sh](https://crt.sh/) JSON API |
+| `dns_health` | **Live** | Passive checks for **SPF** (root-domain TXT `v=spf1`), **DMARC** TXT at `_dmarc.{domain}`, and **DKIM** hints via a **short list** of common selectors `{selector}._domainkey.{domain}` | Resolver: Node `dns` (typically system recursive resolver / OS configuration) |
+| `tls_check` | **Live** | **TLS client** to **`{domain}:443`**, reads leaf certificate (**expiry**, issuer, SAN/CN hostname match vs requested name); `rejectUnauthorized: false` only to allow reading the certificate, then surfaces chain issues from `authorizationError` | Outbound TLS to **the target hostname** |
 
-Implementation: [`src/lib/recon/subdomains.ts`](../src/lib/recon/subdomains.ts).
+**Implementation files:**
 
-**Behavior notes:**
+- `subdomain_enum`: [`src/lib/recon/subdomains.ts`](../src/lib/recon/subdomains.ts)
+- `dns_health`: [`src/lib/recon/dns-health.ts`](../src/lib/recon/dns-health.ts)
+- `tls_check`: [`src/lib/recon/tls-check.ts`](../src/lib/recon/tls-check.ts)
+
+**`subdomain_enum` notes:**
 
 - **25s** fetch timeout (`AbortController`); failures surface as module `error` with a message.
 - Hostnames are deduplicated, filtered, sorted; UI may show up to **200** with `totalHostnames` in metadata.
-- Wildcard prefixes like `*.` are stripped for display grouping inputs; lines with spaces or `*` after processing are skipped.
+- Wildcard prefixes like `*.` are stripped; lines with spaces or `*` after processing are skipped.
 
-**When it is skipped:**
+**`dns_health` notes:**
 
-- Input classifies as **`ip`** (IPv4) — certificate-transparency-based subdomain enum is not applicable. See [`src/app/api/scan/route.ts`](../src/app/api/scan/route.ts).
+- Missing SPF or DMARC is reported as **`medium`** severity (phishing/abuse facilitator); DKIM hints are **`low`** (detection limited to common selectors).
 
-## Planned / roadmap (not implemented in this repo)
+**`tls_check` notes:**
 
-The following appear in project context as **intended** modules for a fuller “attack surface” demo. **They do not have corresponding implementations** under `src/lib/recon/` or extra API routes at the time of this documentation.
+- **~15s** connect timeout.
+- Uses **HTTPS port 443** only; failures (no listener, handshake error) → module **`error`** with message.
+- **`critical`** when the leaf appears **already expired**.
 
-| Module (conceptual) | Intended capability | Typical source (from CONTEXT / init) |
-|---------------------|--------------------|--------------------------------------|
-| Port scan | Open ports on discovered IPs | Shodan API |
-| SSL/TLS check | Cert expiry / misconfig signals | SSL Labs API |
-| DNS health | SPF, DMARC, DKIM presence | Direct DNS |
+**When modules are skipped (IPv4 input):**
+
+All three modules expect a **hostname** (`inputKind === "domain"`). For **`inputKind === "ip"`**, each registers `skipped` with an explanatory `errorMessage` — no crt.sh query, minimal DNS applicability, no SNI-oriented TLS check against a name.
+
+## Planned / roadmap (not implemented yet)
+
+Conceptual additions for a fuller “attack surface” demo (from CONTEXT / init):
+
+| Module (conceptual) | Intended capability | Typical source |
+|---------------------|---------------------|----------------|
+| Port scan | Open ports on IPs | Shodan API |
+| SSL/TLS (deep) | Grade / handshake detail beyond leaf read | SSL Labs API |
 | WHOIS / ASN | Registrant / hosting context | WHOIS API |
 | Exposed services | RDP, FTP, Telnet, etc. | Shodan API |
 | Leaked credentials | Breach visibility for emails | Have I Been Pwned API |
 
-Adding these would require new server code, **API keys** (where applicable), rate-limit handling, and updated UX — plus clear “authorized use only” messaging. If secrets are introduced, add a **`.env.example`** and document it (none exists yet).
+Adding these typically needs **API keys**, rate-limit handling, and UX updates — plus “authorized targets only” messaging. Introduce secrets via `.env.example` when applicable (none yet).
 
 ## Severity vs module
 

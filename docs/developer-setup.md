@@ -22,10 +22,14 @@ src/
     page.tsx           # Scan form + results UI
     layout.tsx         # Root layout, fonts, metadata
     globals.css        # Tailwind v4 import + theme
-    api/scan/route.ts  # POST /api/scan
+    api/scan/route.ts  # POST /api/scan — parses target, invokes runScanModules
   lib/recon/
+    scan-context.ts    # ScanModuleContext type
     normalize-target.ts
-    subdomains.ts
+    subdomains.ts      # subdomain_enum
+    dns-health.ts      # dns_health
+    tls-check.ts       # tls_check
+    run-scan.ts        # Registers modules + Promise.all orchestration
   types/scan.ts        # ScanFinding, ScanModuleResult, ScanResponseBody
 ```
 
@@ -39,14 +43,14 @@ pnpm start   # after build — production mode
 
 ## Extending recon modules
 
-1. Add a function under `src/lib/recon/` that returns `Promise<ScanFinding[]>` (or throws on hard failure).
-2. In [`src/app/api/scan/route.ts`](../src/app/api/scan/route.ts), invoke it when input kind and dependencies match (e.g. only after you have IPs).
-3. Push a `ScanModuleResult` with `name`, `status`, `durationMs`, and `errorMessage` as today.
-4. Document the module in [Recon modules](recon-modules.md) and any new env vars in a future `.env.example`.
+1. Add `src/lib/recon/my-module.ts` exporting an async runner that resolves to `ScanFinding[]` (or throws for hard failures you want surfaced as module `error`).
+2. Register the module in [`src/lib/recon/run-scan.ts`](../src/lib/recon/run-scan.ts): `name`, `skipReason` (or `null` when applicable), `run`.
+3. If the UI benefits from structured extras, stash them under `finding.metadata` and extend [`src/app/page.tsx`](../src/app/page.tsx) (`FindingMetadataBlocks`) sparingly.
+4. Document behaviors in [Recon modules](recon-modules.md) and add `.env.example` when secrets are introduced.
 
-**Async / parallel:** `Promise.all` is fine for independent steps; handle partial failure so one API outage does not wipe all results.
+**Parallelism:** the runner executes modules concurrently; isolate failures inside each module runner.
 
-**Streaming:** not implemented; would need a different response strategy than single JSON (SSE, NDJSON, polling).
+**Streaming:** not implemented — still a single JSON response — would need SSE, NDJSON, or polling beyond `POST /api/scan`.
 
 ## Next.js note
 

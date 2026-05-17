@@ -16,20 +16,26 @@ flowchart LR
   end
   subgraph trustPublic [Public internet]
     crtSh[crt.sh]
+    resolver[DNS resolver]
+    targetHttps[Target host port443]
   end
 
   browser -->|HTTPS localhost in dev| nextApp
   nextApp -->|HTTPS GET JSON| crtSh
+  nextApp -->|DNS lookups| resolver
+  nextApp -->|TLS handshake| targetHttps
 ```
 
 - **User → app:** form input and HTTP API to `POST /api/scan`. Treat logs and screenshots as potentially sensitive if they contain customer domains.
 - **App → crt.sh:** server-side `fetch`; query embeds the **normalized domain** (see [Privacy & data sources](privacy-and-data-sources.md)).
+- **App → DNS:** Node `dns` resolution (resolver path depends on server OS / hosting).
+- **App → target:** outbound **TLS on port 443** to read the leaf certificate (**no exploitation** intent).
 
 ## Assets we protect
 
 - **Operator reputation** — misuse could harm the project or users.
 - **Subject privacy** — domains and derived hostnames are **business identifiers**.
-- **Availability** — reliance on free public APIs (crt.sh) means scans can fail or slow down; not a security property but an operational one.
+- **Availability** — reliance on free public APIs (crt.sh) and outbound connectivity means scans can fail or slow down; not a security property but an operational one.
 
 ## Threats and mitigations (proportionate for a demo)
 
@@ -38,16 +44,16 @@ flowchart LR
 | **Abuse as a bulk scanning / harassment tool** | Document “authorized targets only”; do not market for attacking third parties; consider rate limits / auth in production. |
 | **Misinterpretation (“green = safe”)** | Plain-language caveats: passive data is **incomplete**; see [User guide](user-guide.md). |
 | **Supply chain / API tampering** | Use HTTPS to crt.sh; validate HTTP status and JSON shape; surface errors to UI instead of failing silently. |
-| **Injection via user “target” field** | Input is classified as domain/IP/string; used in URL encoding for crt.sh query — still treat external API responses as untrusted (parse defensively). |
+| **Injection via user “target” field** | Input is normalized to domain/IP; still treat external API/TLS/cert data as **untrusted** (parse defensively). |
 
 ## What we explicitly do **not** claim
 
-- No exploitation, no credential stuffing, no port “hammering” of arbitrary hosts beyond what a future module might define (see [Recon modules](recon-modules.md): **only passive crt.sh today**).
+- No exploitation, no credential stuffing, no volumetric probing of arbitrary hosts beyond **normal** DNS lookups, **one** crt.sh query per domain scan, and a **single** outbound TLS handshake to **443** for certificate inspection ([Recon modules](recon-modules.md)).
 - Not a replacement for professional security assessment or compliance.
 
 ## “Non-intrusive” statement
 
-The UI copy states scans are passive. Today that means **reading public certificate transparency** for a domain string — no authentication bypass, no payload delivery, no aggressive scanning of the target’s infrastructure from this codebase.
+The UI stresses passive scans: **certificate transparency**, **DNS email-auth lookups**, and a **single TLS handshake** to read HTTPS certificate metadata — no authentication bypass, no payload delivery, no multi-port pounding from this codebase.
 
 ## Related
 

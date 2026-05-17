@@ -4,7 +4,13 @@ Base URL in local development: `http://localhost:3000`.
 
 ## `POST /api/scan`
 
-Runs a scan for a single target. Implemented in [`src/app/api/scan/route.ts`](../src/app/api/scan/route.ts). Runtime: **Node.js** (`export const runtime = "nodejs"`).
+Runs a passive scan via [`runScanModules`](../src/lib/recon/run-scan.ts): **`subdomain_enum`** (crt.sh when `domain`), **`dns_health`** (TXT/DKIM lookups when `domain`), **`tls_check`** (TLS handshake to port **443** when `domain`). IPv4 scans skip domain-only modules.
+
+Implemented in [`src/app/api/scan/route.ts`](../src/app/api/scan/route.ts). Runtime: **Node.js** (`export const runtime = "nodejs"`).
+
+### Example response shape (conceptual)
+
+A successful **`domain`** scan typically returns **`modules`** with three names plus multiple **`findings`** (hostname footprint, SPF/DMARC/DKIM checks, TLS expiry/match). Inspect `curl`/browser JSON while developing.
 
 ### Request
 
@@ -59,7 +65,7 @@ JSON body matches **`ScanResponseBody`** (see [`src/types/scan.ts`](../src/types
 | `severity` | `"critical" \| "medium" \| "low"` | Severity tier. |
 | `title` | `string` | Short headline. |
 | `explanation` | `string` | Plain-language risk line. |
-| `metadata` | `Record<string, unknown>` (optional) | Extra data (e.g. `hostnames`, `totalHostnames`). |
+| `metadata` | `Record<string, unknown>` (optional) | Extra data (e.g. CT `hostnames`, DNS check flags, TLS dates/issuer). |
 
 **`ScanModuleResult`**
 
@@ -102,7 +108,7 @@ JSON body matches **`ScanResponseBody`** (see [`src/types/scan.ts`](../src/types
 }
 ```
 
-**Example (IP — subdomain module skipped)**
+**Example (IP — hostname-based modules skipped)**
 
 ```json
 {
@@ -115,6 +121,16 @@ JSON body matches **`ScanResponseBody`** (see [`src/types/scan.ts`](../src/types
       "name": "subdomain_enum",
       "status": "skipped",
       "errorMessage": "Subdomain discovery via certificate transparency needs a domain name, not a raw IP address."
+    },
+    {
+      "name": "dns_health",
+      "status": "skipped",
+      "errorMessage": "DNS email-auth checks (SPF, DMARC, DKIM) apply to domain names, not a raw IP address."
+    },
+    {
+      "name": "tls_check",
+      "status": "skipped",
+      "errorMessage": "TLS certificate inspection uses the hostname from HTTPS; enter a domain name for this check."
     }
   ]
 }
