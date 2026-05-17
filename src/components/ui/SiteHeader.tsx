@@ -6,6 +6,7 @@ import {
   useAuth,
 } from "@clerk/nextjs";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -18,8 +19,10 @@ const NAV = [
 ] as const;
 
 export function SiteHeader() {
+  const pathname = usePathname();
   const { isLoaded, userId } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const hideScanCta = pathname === "/scan";
 
   useEffect(() => {
     const id = window.setTimeout(() => setMounted(true), 0);
@@ -58,15 +61,17 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/scan"
-              className={cn(
-                buttonVariants({ variant: "default", size: "lg" }),
-                "btn-gradient-neon ml-1 hidden rounded-lg px-4 py-2 sm:inline-flex",
-              )}
-            >
-              Iniciar escaneo
-            </Link>
+            {!hideScanCta ? (
+              <Link
+                href="/scan"
+                className={cn(
+                  buttonVariants({ variant: "default", size: "lg" }),
+                  "btn-gradient-neon ml-1 hidden rounded-lg px-4 py-2 sm:inline-flex",
+                )}
+              >
+                Iniciar escaneo
+              </Link>
+            ) : null}
           </nav>
           <div className="flex items-center gap-2 border-l border-cyan-500/15 pl-2 sm:pl-3">
             {!showAuthControls ? (

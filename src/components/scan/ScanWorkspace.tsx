@@ -11,6 +11,7 @@ import {
   aggregateHostnamesFromFindings,
   buildChecklistRows,
 } from "@/lib/dashboard/findings";
+import { cn } from "@/lib/utils";
 import type { AiInsightsResponseBody } from "@/types/ai-insights";
 import type { ScanResponseBody } from "@/types/scan";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
@@ -185,20 +186,33 @@ export function ScanWorkspace() {
   const perFindingMap = aiResult?.perFindingInsightsById ?? null;
   const checklistRowMap = aiResult?.checklistRowInsightsById ?? null;
   const showResults = hasScanned && !loading && result;
+  /** Pre-scan: focused hero form. After first submit, show dashboard tabs. */
+  const showScanTabs = hasScanned || loading;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-      <ScanTabs
-        active={activeTab}
-        onChange={setActiveTab}
-        disabled={loading}
-        hasResults={Boolean(result)}
-        showChecklistTab={!result || result.mode !== "quick"}
-      />
+      {showScanTabs ? (
+        <ScanTabs
+          active={activeTab}
+          onChange={setActiveTab}
+          disabled={loading}
+          hasResults={Boolean(result)}
+          showChecklistTab={!result || result.mode !== "quick"}
+        />
+      ) : null}
 
-      <div className="mt-8" role="tabpanel">
+      <div
+        className={cn(showScanTabs && "mt-8")}
+        role="tabpanel"
+      >
         {activeTab === "scan" ? (
-          <>
+          <div
+            className={cn(
+              "transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none",
+              !showScanTabs &&
+                "flex min-h-[60vh] flex-col justify-center motion-reduce:transform-none",
+            )}
+          >
             <ScanFormPanel
               target={target}
               onTargetChange={setTarget}
@@ -215,7 +229,7 @@ export function ScanWorkspace() {
                 <SkeletonGrid />
               </div>
             ) : null}
-          </>
+          </div>
         ) : null}
 
         {loading && activeTab !== "scan" ? (
