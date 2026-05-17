@@ -24,8 +24,8 @@ Help **end users** run a scan and interpret **modules**, **findings**, and **qui
 
 | Persona | Typical mode | Notes |
 |---------|--------------|--------|
-| **SMB operator** (first visit) | **Quick** | Smaller signal set; **`low`** findings filtered out of API response |
-| **Power user / demo** | **Deep** | All six modules for **domains**; CT + TLS versions + auth details + CAA ([Recon modules](recon-modules.md)) |
+| **SMB operator** (first visit) | **Quick** | Smaller signal set; **`low`** findings mostly filtered (**`osint_passive`** keeps informational rows) |
+| **Power user / demo** | **Deep** | All domain modules + passive OSINT (seven total runners for domains — see [Recon modules](recon-modules.md)); CT + TLS versions + auth details + CAA + `osint_passive`. |
 
 ## How to run a scan (web UI)
 
@@ -33,8 +33,9 @@ Help **end users** run a scan and interpret **modules**, **findings**, and **qui
 2. In **Target domain or URL**, enter:
    - `example.com`
    - `https://www.example.com`
-3. Click **Start scan**.
-4. Wait for the single response (there is no live streaming of partial results in the UI yet).
+3. Optionally paste mailbox addresses (**Correos opcionales**) that share your apex — domains are inspected for overlapping mail/web hygiene; third-party apex domains from the paste are deliberately skipped server-side (see [Privacy & data sources](privacy-and-data-sources.md)).
+4. Click **Start scan**.
+5. Wait for the single response (there is no live streaming of partial results in the UI yet).
 
 Supported input shapes are described in [API reference](api-reference.md) and implemented in `classifyAndNormalizeTarget` (see [Architecture](architecture.md)).
 
@@ -52,7 +53,9 @@ Each row is one recon **module**:
 - **error** — failed (message explains why when available).
 - **skipped** — not applicable for this input (domain-only checks are skipped when you enter a bare **IPv4**).
 
-Implemented modules are listed in [Recon modules](recon-modules.md): **`subdomain_enum`**, **`dns_health`**, **`tls_check`**, **`tls_versions_check`** (deep), **`dns_auth_details`** (deep), **`dns_caa_check`** (deep). **`Quick`** skips CT and deep-only modules.
+Implemented modules are listed in [Recon modules](recon-modules.md): **`subdomain_enum`**, **`dns_health`**, **`tls_check`**, **`tls_versions_check`** (deep), **`dns_auth_details`** (deep), **`dns_caa_check`** (deep), **`osint_passive`**. **`Quick`** skips CT and deep-only modules but still surfaces low-severity **`osint_passive`** informational rows.
+
+When you pasted optional emails that produced same-apex RHS domains, the **Overview** tab also shows an **OSINT por dominios de correo** card summarizing which domains ran.
 
 ### Findings
 
@@ -64,6 +67,7 @@ Each finding includes:
 - **Metadata** (optional):
   - **Subdomains**: scrollable hostname list (may be truncated for display).
   - **DNS / TLS**: key-value snapshots (presence of SPF/DMARC, DKIM selectors hit, certificate dates, issuer).
+  - **OSINT (`osint_passive`)**: inspected hostname, `subjectSource` (`primary` vs `email_domain`), and per-check keys (`security_txt`, `mta_sts`, …).
 
 ## What “passive” means here
 

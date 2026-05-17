@@ -75,6 +75,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [relatedEmails, setRelatedEmails] = useState("");
   const [history, setHistory] = useState<ScanSessionHistoryEntry[]>([]);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(
     null,
@@ -136,6 +137,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     setActiveTab("overview");
     setSelectedHistoryId(null);
     setMobileSidebarOpen(false);
+    setRelatedEmails("");
   }, [resetAi]);
 
   const handleSelectHistory = useCallback(
@@ -148,6 +150,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
       setActiveTab("overview");
       setSelectedHistoryId(entry.id);
       setMobileSidebarOpen(false);
+      setRelatedEmails("");
     },
     [resetAi],
   );
@@ -180,10 +183,15 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     setLoading(true);
     setSelectedHistoryId(null);
     try {
+      const scanBody: Record<string, unknown> = { target, mode: scanMode };
+      if (relatedEmails.trim()) {
+        scanBody.emails = relatedEmails;
+      }
+
       const response = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, mode: scanMode }),
+        body: JSON.stringify(scanBody),
       });
       const body: unknown = await response.json();
       if (!response.ok) {
@@ -217,7 +225,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     } finally {
       setLoading(false);
     }
-  }, [resetAi, result, scanMode, target]);
+  }, [resetAi, result, scanMode, target, relatedEmails]);
 
   async function runScan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -308,6 +316,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
       return (
         <ScanOverviewPanel
           normalizedTarget={displayTarget}
+          emailDomainSummary={resolvedResult.emailDomainSummary}
           findings={findingsForGrid}
           modules={moduleRows}
           totalHostnames={hostAggregate.total}
@@ -429,6 +438,8 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
                     }
             }
             onOwnershipVerified={handleOwnershipVerified}
+            relatedEmails={relatedEmails}
+            onRelatedEmailsChange={setRelatedEmails}
           />
         </ScanMainStart>
       );

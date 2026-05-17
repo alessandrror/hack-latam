@@ -43,4 +43,19 @@ export default defineSchema({
     createdAt: v.number(),
     modelUsed: v.optional(v.string()),
   }).index("by_target", ["normalizedTarget"]),
+
+  /** Audit trail for optional email-list OSINT: domains + counts only (no mailbox parts). */
+  emailDomainSummaries: defineTable({
+    userId: v.string(),
+    target: v.string(),
+    normalizedTarget: v.string(),
+    scanMode: v.union(v.literal("quick"), v.literal("deep")),
+    primaryApex: v.union(v.string(), v.null()),
+    eligibleEmailDomains: v.array(v.string()),
+    skippedExternalDomains: v.array(v.string()),
+    parsedEmailLineCount: v.number(),
+    truncatedEmailList: v.boolean(),
+    truncatedUniqueDomainList: v.boolean(),
+    createdAt: v.number(),
+  }).index("by_user", ["userId"]),
 });

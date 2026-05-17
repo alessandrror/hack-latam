@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { TargetInputKind } from "@/lib/recon/normalize-target";
 import { cn } from "@/lib/utils";
 import { apexBypassesOwnershipVerification } from "@/lib/verify/ownership-bypass";
@@ -42,6 +43,9 @@ type ScanFormPanelProps = {
   /** `undefined` while Convex `getStatus` is loading */
   verification: VerificationSnapshot | undefined;
   onOwnershipVerified: () => void;
+  /** Optional same-apex mailboxes (domains only OSINT side; pasted text capped server-side). */
+  relatedEmails: string;
+  onRelatedEmailsChange: (value: string) => void;
 };
 
 const MODE_OPTIONS: {
@@ -75,6 +79,8 @@ export function ScanFormPanel({
   apexDomain,
   verification,
   onOwnershipVerified,
+  relatedEmails,
+  onRelatedEmailsChange,
 }: ScanFormPanelProps) {
   const charCount = target.length;
   const deepRequiresAuth =
@@ -96,7 +102,10 @@ export function ScanFormPanel({
 
   useEffect(() => {
     if (verification?.status === "verified") {
-      setVerifyModalOpen(false);
+      // Deferred close avoids react-hooks/set-state-in-effect cascading render warning.
+      queueMicrotask(() => {
+        setVerifyModalOpen(false);
+      });
     }
   }, [verification?.status]);
 
@@ -145,6 +154,38 @@ export function ScanFormPanel({
               {charCount}/256
             </span>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <label
+            htmlFor="scan-related-emails"
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Correos opcionales (mismo apex)
+          </label>
+          <Textarea
+            id="scan-related-emails"
+            value={relatedEmails}
+            disabled={loading}
+            onChange={(e) =>
+              onRelatedEmailsChange(e.target.value.slice(0, 8192))
+            }
+            placeholder={`uno@tu-dominio.com
+otro@mail.tu-dominio.com`}
+            maxLength={8192}
+            rows={3}
+            className={cn(
+              "resize-y rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 font-mono text-sm shadow-sm",
+              "transition-[border-color,box-shadow] duration-150",
+              "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none",
+              "placeholder:text-muted-foreground/75",
+            )}
+          />
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            Solo dominios registrables bajo el mismo apex que el objetivo pasan OSINT pasivo por
+            correo. No guardamos direcciones completas en el historial audit — solo dominios y
+            conteos.
+          </p>
         </div>
 
         <div className="space-y-2">

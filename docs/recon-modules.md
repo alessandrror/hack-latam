@@ -32,6 +32,7 @@ Orchestration: modules are registered and run **in parallel** from [`src/lib/rec
 | `tls_versions_check` | **Live** (deep only) | **Sequential** isolated TLS handshakes (TLS 1.0–1.3) on port **443** to see which protocol versions the server negotiates; flags legacy TLS 1.0/1.1 | Outbound TLS to the same host |
 | `dns_auth_details` | **Live** (deep only) | Parses **SPF** terminal policy (`-all` / `~all` / …) and **DMARC** `p=` / `pct=` when records exist | Node `dns` TXT (apex + `_dmarc`) |
 | `dns_caa_check` | **Live** (deep only) | **CAA** records at the zone apex | Node `dns.resolveCaa` |
+| `osint_passive` | **Live** | Passive **OSINT**: `security.txt`, HTTPS policy headers (**HSTS**, **CSP**, framing, referrer, permissions-policy), **MTA-STS**, **TLS-RPT**, **BIMI**, **DNSKEY** apex hint via Node `dns` — scoped to `{primary hostname ∪ same‑apex domains from pasted emails}` ([`POST /api/scan`](api-reference.md#post-apiscan) `emails` field); external email domains omitted | HTTPS `fetch` per hostname (`.well-known/security.txt`, `/` HEAD/GET) + resolver |
 
 **Implementation files:**
 
@@ -41,6 +42,19 @@ Orchestration: modules are registered and run **in parallel** from [`src/lib/rec
 - `tls_versions_check`: [`src/lib/recon/tls-versions-check.ts`](../src/lib/recon/tls-versions-check.ts)
 - `dns_auth_details`: [`src/lib/recon/dns-auth-details.ts`](../src/lib/recon/dns-auth-details.ts)
 - `dns_caa_check`: [`src/lib/recon/dns-caa-check.ts`](../src/lib/recon/dns-caa-check.ts)
+- `osint_passive`: [`src/lib/recon/osint-passive.ts`](../src/lib/recon/osint-passive.ts) — email-derived hosts via [`email-domains.ts`](../src/lib/recon/email-domains.ts); caps (50 pasted tokens, ≤10 distinct domains) enforced server-side.
+
+**Email-list OSINT (same apex only)**
+
+- Paste addresses in **`emails`** on `POST /api/scan` (optional string or JSON string array).
+- Mailbox **local-part** values are discarded after parsing — only RHS domains persist in audit rows.
+- Responses may include **`emailDomainSummary`** (domains/counts/trunc flags) whenever `emails` was non-empty; authenticated scans write a Convex **`emailDomainSummaries`** row (no mailbox parts).
+
+**`osint_passive` notes:**
+
+- **≈12s** HTTP timeouts per outbound `fetch`; errors surface inside individual findings (`https` unreachable) without failing the module.
+- **TLS-RPT** / **MTA-STS** / **BIMI** TXT lookups use Node `dns.resolveTxt`; **DNSSEC** probes call `dns.resolve(apex,"DNSKEY")` and may resolve as "unknown" on resolver quirks.
+- **Findings** tag `subjectSource`: `primary` vs `email_domain` for UI/diagnostics only.
 
 **`subdomain_enum` notes:**
 
@@ -64,7 +78,7 @@ Domain-only modules expect a **hostname** (`inputKind === "domain"`). For **`inp
 
 **When modules are skipped (quick scan):**
 
-**Deep-only** modules (`tls_versions_check`, `dns_auth_details`, `dns_caa_check`) and **`subdomain_enum`** register `skipped` when `mode === "quick"` (see [`run-scan.ts`](../src/lib/recon/run-scan.ts)). **`Quick`** also filters **`low`** severity findings from the aggregate response.
+**Deep-only** modules (`tls_versions_check`, `dns_auth_details`, `dns_caa_check`) and **`subdomain_enum`** register `skipped` when `mode === "quick"` (see [`run-scan.ts`](../src/lib/recon/run-scan.ts)). **`Quick`** filters **`low`** severity findings globally **except** `osint_passive` (so passive OSINT still surfaces informational rows).
 
 ## Planned / roadmap (not implemented yet)
 
