@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
 import { History } from "lucide-react";
 import { AiInsightsColumn } from "@/components/dashboard/AiInsightsColumn";
 import { AllFindingsPanel } from "@/components/dashboard/AllFindingsPanel";
@@ -25,6 +26,8 @@ import {
   persistScanSessionHistory,
   type ScanSessionHistoryEntry,
 } from "@/lib/scan/scanSessionHistory";
+import { extractApexFromNormalizedHost } from "@/lib/recon/extract-apex";
+import { classifyAndNormalizeTarget } from "@/lib/recon/normalize-target";
 import { cn } from "@/lib/utils";
 import type { AiInsightsResponseBody } from "@/types/ai-insights";
 import type { ScanResponseBody } from "@/types/scan";
@@ -36,6 +39,8 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+
+import { api } from "../../../convex/_generated/api";
 
 import { ScanFormPanel, type ScanMode } from "./ScanFormPanel";
 import { ScanHistorySidebar } from "./ScanHistorySidebar";
@@ -88,6 +93,22 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
   const hostAggregate = useMemo(
     () => aggregateHostnamesFromFindings(findingsForGrid),
     [findingsForGrid],
+  );
+
+  const classifiedTarget = useMemo(
+    () => classifyAndNormalizeTarget(target),
+    [target],
+  );
+  const apexDomain = useMemo(() => {
+    if (classifiedTarget.kind !== "domain") return null;
+    return extractApexFromNormalizedHost(classifiedTarget.normalized);
+  }, [classifiedTarget]);
+
+  const verification = useQuery(
+    api.verifiedDomains.getStatus,
+    authLoaded && isSignedIn && apexDomain
+      ? { domain: apexDomain }
+      : "skip",
   );
 
   const resetAi = useCallback(() => {
@@ -144,8 +165,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     [history, selectedHistoryId, handleSelectHistory, handleNewScan, result, loading],
   );
 
-  async function runScan(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const runScanCore = useCallback(async () => {
     setError(null);
     setResult(null);
     resetAi();
@@ -167,12 +187,10 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
       });
       const body: unknown = await response.json();
       if (!response.ok) {
+        const o = body as Record<string, unknown>;
         const message =
-          typeof body === "object" &&
-          body !== null &&
-          "error" in body &&
-          typeof (body as { error: unknown }).error === "string"
-            ? (body as { error: string }).error
+          typeof o.error === "string"
+            ? o.error
             : `Error de escaneo (${response.status}).`;
         setError(message);
         return;
@@ -199,7 +217,16 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     } finally {
       setLoading(false);
     }
+  }, [resetAi, result, scanMode, target]);
+
+  async function runScan(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await runScanCore();
   }
+
+  const handleOwnershipVerified = useCallback(() => {
+    void runScanCore();
+  }, [runScanCore]);
 
   const scanSnapshot = useMemo(() => {
     if (!result) return null;
@@ -383,6 +410,25 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
             error={error}
             authLoaded={authLoaded}
             isAuthenticated={Boolean(isSignedIn)}
+            targetKind={classifiedTarget.kind}
+            apexDomain={apexDomain}
+            verification={
+              verification === undefined
+                ? undefined
+                : verification === null
+                  ? null
+                  : {
+                      status: verification.status,
+                      method: verification.method,
+                      ...(verification.token !== undefined
+                        ? { token: verification.token }
+                        : {}),
+                      ...(verification.failureReason
+                        ? { failureReason: verification.failureReason }
+                        : {}),
+                    }
+            }
+            onOwnershipVerified={handleOwnershipVerified}
           />
         </ScanMainStart>
       );

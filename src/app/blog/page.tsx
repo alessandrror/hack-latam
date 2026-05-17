@@ -1,63 +1,62 @@
-import Link from "next/link";
-import { BLOG_POSTS } from "@/data/blog-posts";
+﻿import { BLOG_POSTS } from "@/data/blog-posts";
+import { BlogFeaturedPost } from "@/components/blog/BlogFeaturedPost";
+import { BlogPostGrid } from "@/components/blog/BlogPostGrid";
 import { NewsletterCTA } from "@/components/ui/NewsletterCTA";
 import { SiteFooter } from "@/components/ui/SiteFooter";
 import { SiteHeader } from "@/components/ui/SiteHeader";
-import { Card, CardContent } from "@/components/ui/card";
+import { getFeaturedPost, getSortedPosts } from "@/lib/blog-utils";
 
 export const metadata = {
   title: "Blog — Hack LATAM",
   description:
-    "Guías prácticas sobre errores públicos repetidos SPF/DMARC y HTTPS observable — mismo enfoque defensivo y sin pretender vigilancia ante atacantes en vivo.",
+    "Guías prácticas sobre SPF, DMARC, HTTPS, superficie de ataque y postura defensiva para PYMEs en Latinoamérica.",
 };
 
 export default function BlogPage() {
+  const sorted = getSortedPosts(BLOG_POSTS);
+  const featured = getFeaturedPost(BLOG_POSTS);
+  const rest = featured
+    ? sorted.filter((p) => p.slug !== featured.slug)
+    : sorted;
+
   return (
     <div className="min-h-dvh bg-background">
       <SiteHeader />
-      <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-          Centro de conocimiento
-        </p>
-        <h1 className="mt-3 text-4xl font-bold text-foreground">
-          Blog de ciberseguridad
-        </h1>
-        <p className="mt-4 text-muted-foreground">
-          Señales que suelen aparecer cuando miras huella DNS y HTTPS en público —
-          qué significan y qué hacer después.
-        </p>
-        <ul className="mt-12 space-y-6">
-          {BLOG_POSTS.map((post) => (
-            <li key={post.slug}>
-              <Link href={`/blog/${post.slug}`} className="block">
-                <Card className="gap-0 border border-border py-0 shadow-sm transition hover:shadow-md">
-                  <CardContent className="p-6">
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      <span className="font-semibold uppercase tracking-wider text-accent">
-                        {post.category}
-                      </span>
-                      <span>{post.publishedAt}</span>
-                      <span>{post.readMinutes} min</span>
-                    </div>
-                    <h2 className="mt-3 text-xl font-semibold text-foreground">
-                      {post.title}
-                    </h2>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      {post.excerpt}
-                    </p>
-                    <span className="mt-4 inline-block text-sm font-medium text-accent">
-                      Leer artículo →
-                    </span>
-                  </CardContent>
-                </Card>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-16">
+
+      <section className="relative overflow-hidden border-b border-border">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(2,132,199,0.18),transparent)]"
+          aria-hidden
+        />
+        <div className="relative mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+            Centro de conocimiento
+          </p>
+          <h1 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            Blog de ciberseguridad
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            {BLOG_POSTS.length} guías sobre señales públicas — DNS, correo, TLS y
+            superficie de ataque — con acciones concretas para equipos que no tienen
+            SOC dedicado.
+          </p>
+        </div>
+      </section>
+
+      <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        {featured && (
+          <div className="mb-16">
+            <BlogFeaturedPost post={featured} />
+          </div>
+        )}
+
+        <BlogPostGrid posts={rest} />
+
+        <div className="mt-20">
           <NewsletterCTA />
         </div>
       </main>
+
       <SiteFooter />
     </div>
   );

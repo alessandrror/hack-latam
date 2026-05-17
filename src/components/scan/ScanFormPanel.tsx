@@ -3,11 +3,26 @@
 import { SignInButton } from "@clerk/nextjs";
 import { Zap } from "lucide-react";
 import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import type { TargetInputKind } from "@/lib/recon/normalize-target";
 import { cn } from "@/lib/utils";
+import { apexBypassesOwnershipVerification } from "@/lib/verify/ownership-bypass";
+
+import {
+  OwnershipVerificationSection,
+  type VerificationSnapshot,
+} from "./OwnershipVerificationSection";
 
 export type ScanMode = "deep" | "quick";
 
@@ -21,6 +36,12 @@ type ScanFormPanelProps = {
   error: string | null;
   authLoaded: boolean;
   isAuthenticated: boolean;
+  targetKind: TargetInputKind;
+  /** Registrable apex when `targetKind === "domain"` */
+  apexDomain: string | null;
+  /** `undefined` while Convex `getStatus` is loading */
+  verification: VerificationSnapshot | undefined;
+  onOwnershipVerified: () => void;
 };
 
 const MODE_OPTIONS: {
@@ -31,7 +52,7 @@ const MODE_OPTIONS: {
   {
     id: "deep",
     label: "Profundo",
-    desc: "Seis módulos + checklist. Requiere sesión iniciada.",
+    desc: "Seis módulos + checklist. Cuenta y verificación DNS o HTTPS del apex.",
   },
   {
     id: "quick",
@@ -50,14 +71,51 @@ export function ScanFormPanel({
   error,
   authLoaded,
   isAuthenticated,
+  targetKind,
+  apexDomain,
+  verification,
+  onOwnershipVerified,
 }: ScanFormPanelProps) {
   const charCount = target.length;
   const deepRequiresAuth =
     scanMode === "deep" && authLoaded && !isAuthenticated;
+  const deepIpBlocked =
+    scanMode === "deep" && authLoaded && targetKind === "ip";
+  const ownershipBypassDemo = Boolean(
+    apexDomain && apexBypassesOwnershipVerification(apexDomain),
+  );
+  const deepOwnershipBlocked =
+    scanMode === "deep" &&
+    authLoaded &&
+    isAuthenticated &&
+    Boolean(apexDomain) &&
+    verification?.status !== "verified" &&
+    !ownershipBypassDemo;
+
+  const [verifyModalOpen, setVerifyModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (verification?.status === "verified") {
+      setVerifyModalOpen(false);
+    }
+  }, [verification?.status]);
+
+  function handleFormSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (loading || !target.trim()) return;
+    if (deepRequiresAuth || deepIpBlocked) return;
+
+    if (deepOwnershipBlocked) {
+      setVerifyModalOpen(true);
+      return;
+    }
+
+    onSubmit(e);
+  }
 
   return (
     <div className="w-full space-y-6 text-left">
-      <form onSubmit={onSubmit} className="space-y-6">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
         <div className="space-y-2">
           <label htmlFor="scan-target" className="sr-only">
             Dominio o URL
@@ -157,12 +215,51 @@ export function ScanFormPanel({
 
         <Button
           type="submit"
-          disabled={loading || !target.trim() || deepRequiresAuth}
+          disabled={
+            loading || !target.trim() || deepRequiresAuth || deepIpBlocked
+          }
           size="lg"
           className="h-12 w-full rounded-full text-sm font-semibold shadow-sm transition-colors duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-40"
         >
           {loading ? "Ejecutando módulos…" : "Lanzar comprobaciones"}
         </Button>
+
+        {scanMode === "deep" &&
+        isAuthenticated &&
+        apexDomain &&
+        verification === undefined &&
+        !ownershipBypassDemo ? (
+          <p
+            className="text-center text-[11px] text-muted-foreground"
+            role="status"
+          >
+            Comprobando titularidad del dominio…
+          </p>
+        ) : null}
+
+        {scanMode === "deep" &&
+        isAuthenticated &&
+        apexDomain &&
+        verification !== undefined &&
+        (verification === null || verification.status !== "verified") &&
+        !deepIpBlocked &&
+        !ownershipBypassDemo ? (
+          <p className="text-center text-[11px] leading-snug text-muted-foreground">
+            Pulsa <strong className="text-foreground">Lanzar comprobaciones</strong>{" "}
+            para abrir la verificación del apex{" "}
+            <span className="font-mono text-foreground">{apexDomain}</span>.
+          </p>
+        ) : null}
+
+        {deepIpBlocked ? (
+          <p
+            className="text-center text-xs text-amber-700 dark:text-amber-500/90"
+            role="status"
+          >
+            El modo profundo no admite solo IP. Usa un nombre de dominio o
+            cambia a <strong>modo rápido</strong>.
+          </p>
+        ) : null}
 
         {deepRequiresAuth ? (
           <p className="text-center text-xs text-primary" role="status">
@@ -181,6 +278,40 @@ export function ScanFormPanel({
           </p>
         ) : null}
       </form>
+
+      <Dialog open={verifyModalOpen} onOpenChange={setVerifyModalOpen}>
+        <DialogContent className="gap-0 sm:max-w-md" showCloseButton>
+          <DialogHeader>
+            <DialogTitle>Verificar titularidad</DialogTitle>
+            <DialogDescription>
+              Demuestra control sobre{" "}
+              <span className="font-mono text-foreground">
+                {apexDomain ?? "tu dominio"}
+              </span>{" "}
+              con un registro DNS TXT o un archivo HTTPS en{" "}
+              <span className="font-mono">.well-known</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            {apexDomain && verification !== undefined ? (
+              <OwnershipVerificationSection
+                apexDomain={apexDomain}
+                verification={verification}
+                disabled={loading}
+                embedded
+                onVerified={() => {
+                  setVerifyModalOpen(false);
+                  onOwnershipVerified();
+                }}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground" role="status">
+                Comprobando estado de verificación…
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <p className="flex items-start gap-2.5 text-[11px] leading-relaxed text-muted-foreground">
         <Zap
