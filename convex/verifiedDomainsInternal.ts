@@ -81,3 +81,52 @@ export const internalApplyVerification = internalMutationGeneric({
     return null;
   },
 });
+
+/**
+ * Best-effort audit trail for Zavu "domain verified" email (does not affect verification status).
+ */
+export const internalRecordVerificationEmailAttempt = internalMutationGeneric({
+  args: {
+    userId: v.string(),
+    domain: v.string(),
+    lastAttemptAt: v.number(),
+    outcome: v.union(v.literal("sent"), v.literal("failed"), v.literal("skipped")),
+    messageId: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("verifiedDomains")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.eq(q.field("domain"), args.domain))
+      .first();
+    if (!row) {
+      return null;
+    }
+
+    if (args.outcome === "sent") {
+      await ctx.db.patch(row._id, {
+        verificationEmailLastAttemptAt: args.lastAttemptAt,
+        verificationEmailSentAt: args.lastAttemptAt,
+        verificationEmailMessageId: args.messageId,
+        verificationEmailLastError: undefined,
+      });
+      return null;
+    }
+
+    const patch: {
+      verificationEmailLastAttemptAt: number;
+      verificationEmailLastError: string;
+    } = {
+      verificationEmailLastAttemptAt: args.lastAttemptAt,
+      verificationEmailLastError:
+        args.errorMessage ??
+        (args.outcome === "skipped"
+          ? "Notificación omitida."
+          : "Error al enviar el correo."),
+    };
+    await ctx.db.patch(row._id, patch);
+    return null;
+  },
+});

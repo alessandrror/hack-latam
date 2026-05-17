@@ -85,6 +85,84 @@ async function verifyHttpFile(
   };
 }
 
+const ZAVU_MESSAGES_URL = "https://api.zavu.dev/v1/messages";
+
+function isNonEmptyEmail(value: string | undefined): value is string {
+  return typeof value === "string" && value.includes("@") && value.trim().length > 0;
+}
+
+async function sendDomainVerifiedEmailViaZavu(params: {
+  to: string;
+  domain: string;
+  idempotencyKey: string;
+  apiKey: string;
+}): Promise<{ ok: true; messageId?: string } | { ok: false; error: string }> {
+  const subject = "Dominio verificado";
+  const text =
+    `Has verificado correctamente el dominio ${params.domain} en Hack Latam.\n\n` +
+    `Fecha (UTC): ${new Date().toISOString()}\n\n` +
+    `Si no iniciaste esta verificación, ignora este mensaje.`;
+
+  try {
+    const res = await fetch(ZAVU_MESSAGES_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${params.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: params.to,
+        channel: "email",
+        subject,
+        text,
+        idempotencyKey: params.idempotencyKey,
+      }),
+      signal: AbortSignal.timeout(25_000),
+    });
+
+    let raw: unknown;
+    try {
+      raw = await res.json();
+    } catch {
+      raw = null;
+    }
+
+    if (!res.ok) {
+      const apiMsg =
+        typeof raw === "object" &&
+        raw !== null &&
+        "message" in raw &&
+        typeof (raw as { message: unknown }).message === "string"
+          ? (raw as { message: string }).message
+          : null;
+      const error =
+        apiMsg && apiMsg.length > 0 ? apiMsg : `Zavu HTTP ${res.status}`;
+      return { ok: false, error };
+    }
+
+    const messageId =
+      typeof raw === "object" &&
+      raw !== null &&
+      "message" in raw &&
+      typeof (raw as { message: unknown }).message === "object" &&
+      (raw as { message: { id?: unknown } }).message !== null
+        ? (raw as { message: { id?: string } }).message.id
+        : undefined;
+
+    return {
+      ok: true,
+      ...(typeof messageId === "string" && messageId.length > 0
+        ? { messageId }
+        : {}),
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
+  }
+}
+
 export const verifyCheck = actionGeneric({
   args: { domain: v.string() },
   returns: v.object({
@@ -154,6 +232,69 @@ export const verifyCheck = actionGeneric({
         domain: args.domain,
         status: "verified",
       });
+
+      const attemptAt = Date.now();
+      const apiKey = process.env.ZAVUDEV_API_KEY?.trim();
+      const recipientEmail = identity.email;
+
+      if (!isNonEmptyEmail(recipientEmail)) {
+        await ctx.runMutation(
+          internal.verifiedDomainsInternal.internalRecordVerificationEmailAttempt,
+          {
+            userId: identity.tokenIdentifier,
+            domain: args.domain,
+            lastAttemptAt: attemptAt,
+            outcome: "skipped",
+            errorMessage:
+              "No hay correo en tu cuenta de sesión; no se envió notificación.",
+          },
+        );
+      } else if (!apiKey) {
+        await ctx.runMutation(
+          internal.verifiedDomainsInternal.internalRecordVerificationEmailAttempt,
+          {
+            userId: identity.tokenIdentifier,
+            domain: args.domain,
+            lastAttemptAt: attemptAt,
+            outcome: "skipped",
+            errorMessage:
+              "ZAVUDEV_API_KEY no está configurada en Convex; no se envió notificación.",
+          },
+        );
+      } else {
+        const idempotencyKey = `domain-verified:${identity.tokenIdentifier}:${args.domain}`;
+        const sendResult = await sendDomainVerifiedEmailViaZavu({
+          to: recipientEmail.trim(),
+          domain: args.domain,
+          idempotencyKey,
+          apiKey,
+        });
+
+        if (sendResult.ok) {
+          await ctx.runMutation(
+            internal.verifiedDomainsInternal.internalRecordVerificationEmailAttempt,
+            {
+              userId: identity.tokenIdentifier,
+              domain: args.domain,
+              lastAttemptAt: attemptAt,
+              outcome: "sent",
+              messageId: sendResult.messageId,
+            },
+          );
+        } else {
+          await ctx.runMutation(
+            internal.verifiedDomainsInternal.internalRecordVerificationEmailAttempt,
+            {
+              userId: identity.tokenIdentifier,
+              domain: args.domain,
+              lastAttemptAt: attemptAt,
+              outcome: "failed",
+              errorMessage: sendResult.error,
+            },
+          );
+        }
+      }
+
       return { ok: true, appliedStatus: "verified" as const };
     }
 
