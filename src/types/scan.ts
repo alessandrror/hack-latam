@@ -1,5 +1,8 @@
 export type Severity = "critical" | "medium" | "low";
 
+/** User-selected scan depth: quick skips subdomain CT enumeration and omits low-severity findings. */
+export type ScanMode = "deep" | "quick";
+
 export type ScanModuleStatus = "ok" | "error" | "skipped";
 
 export interface ScanFinding {
@@ -20,14 +23,11 @@ export interface ScanModuleResult {
   errorMessage?: string;
 }
 
-/** Client-requested scan depth; echoed by the scan API once auth is enforced. */
-export type ScanDepthMode = "quick" | "deep";
-
 export interface ScanResponseBody {
   target: string;
   normalizedTarget: string;
   inputKind: "domain" | "ip" | "unknown";
+  mode: ScanMode;
   findings: ScanFinding[];
   modules: ScanModuleResult[];
-  scanMode: ScanDepthMode;
 }

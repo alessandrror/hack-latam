@@ -13,7 +13,7 @@ Rules:
 - Never claim completeness: these checks are passive and may miss assets or mis-state risk.
 - Output MUST be valid JSON only, no markdown fences, no commentary before or after the JSON object.
 - Use the finding ids exactly as provided in input for keys in perFindingInsightsById and relatedFindingIds.
-- For checklistRowInsightsById use these keys when relevant: check-spf, check-dmarc, check-dkim, check-cert (omit unknown keys).
+- For checklistRowInsightsById use these keys when relevant: check-spf, check-dmarc, check-dkim, check-caa, check-cert, check-tls-versions (omit unknown keys).
 
 JSON shape:
 {
@@ -28,6 +28,7 @@ export function buildUserPrompt(context: AiInsightsRequestBody): string {
   const payload = {
     normalizedTarget: context.normalizedTarget,
     inputKind: context.inputKind,
+    scanMode: context.scanMode ?? "deep",
     subdomainSummary: {
       totalHostnamesReported: context.totalHostnames,
       hostnameSampleShownCount: context.hostnameSampleShownCount,
@@ -45,8 +46,23 @@ INPUT_JSON:
 ${JSON.stringify(payload)}`;
 }
 
-export function getInsightsSystemPrompt(): string {
-  return SYSTEM_PROMPT;
+export function getInsightsSystemPrompt(
+  scanMode: "deep" | "quick" = "deep",
+): string {
+  const modeBlock =
+    scanMode === "quick"
+      ? `
+
+Scan mode context (must influence executiveSummary tone):
+- This was a QUICK scan: certificate transparency subdomain enumeration was skipped on the server, low-severity findings were omitted, and checklist detail may be absent.
+- Do not imply full attack-surface or subdomain coverage. You may say the snapshot is a faster, priority-focused pass.`
+      : `
+
+Scan mode context (must influence executiveSummary tone):
+- This was a DEEP scan: all passive modules ran and the full checklist/low-severity signal may be present unless modules failed.
+- You may describe this as a broader audit-style passive snapshot (still not exhaustive).`;
+
+  return SYSTEM_PROMPT + modeBlock;
 }
 
 function isSeverityLike(

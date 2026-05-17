@@ -49,3 +49,6 @@ export function ScanLoadingSkeleton({
     </div>
   );
 }
+
+/** @deprecated Prefer `ScanLoadingSkeleton`; kept for existing imports. */
+export { ScanLoadingSkeleton as SkeletonGrid };

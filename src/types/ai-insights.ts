@@ -30,8 +30,6 @@ export interface AiInsightsResponseBody {
   checklistRowInsightsById?: Record<string, AiPerFindingInsight>;
   /** Server-set: actual model slug used (after retries). */
   modelUsed?: string;
-  /** Present when `/api/ai/insights` served a Convex entry under 24h TTL. */
-  cached?: boolean;
 }
 
 /** Minimal payload from client/server for LLM (no hostname bulk, no metadata). */
@@ -54,8 +52,8 @@ export interface AiInsightsMinimalModuleInput {
 export interface AiInsightsRequestBody {
   normalizedTarget: string;
   inputKind: string;
-  /** Skip Convex cache lookup and regenerate via OpenRouter. */
-  forceRefresh?: boolean;
+  /** Scan depth: quick skips CT enumeration and omits low-severity findings server-side. */
+  scanMode?: "deep" | "quick";
   /** Count only — no hostname list sent to model. */
   totalHostnames: number;
   /** How many distinct hostnames are shown in UI (still not enumerated to model unless present). */

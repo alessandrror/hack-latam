@@ -131,7 +131,7 @@ export function ScanHistorySidebar({
                               findings:
                                 (row.findings as ScanFinding[]) ?? [],
                               modules: row.modules ?? [],
-                              scanMode: row.scanMode,
+                              mode: row.scanMode,
                             },
                             {
                               convexScanId: row._id,

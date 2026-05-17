@@ -3,7 +3,10 @@ import type { ScanFinding } from "@/types/scan";
 export const MODULE_DISPLAY_ORDER = [
   "subdomain_enum",
   "dns_health",
+  "dns_auth_details",
+  "dns_caa",
   "tls_check",
+  "tls_versions",
 ] as const;
 
 export function sortedFindings(findings: ScanFinding[]): ScanFinding[] {
@@ -56,6 +59,54 @@ export interface ChecklistRow {
   label: string;
   status: ChecklistStatus;
   detail?: string;
+}
+
+function caaChecklistRow(findings: ScanFinding[]): ChecklistRow | null {
+  const f = findings.find((x) => x.module === "dns_caa");
+  if (!f?.metadata || typeof f.metadata !== "object") return null;
+  const present = (f.metadata as { caaPresent?: boolean }).caaPresent === true;
+  return {
+    id: "check-caa",
+    label: "CAA (certificate issuance)",
+    status: present ? "pass" : "warn",
+    detail: present
+      ? "CAA record(s) published"
+      : "No CAA records — optional hardening control",
+  };
+}
+
+function tlsVersionsChecklistRow(findings: ScanFinding[]): ChecklistRow | null {
+  const f = findings.find((x) => x.module === "tls_versions");
+  if (!f) return null;
+
+  const meta =
+    f.metadata && typeof f.metadata === "object"
+      ? (f.metadata as { legacyTlsEnabled?: boolean })
+      : null;
+  const legacy = meta?.legacyTlsEnabled === true;
+
+  if (f.severity === "medium" && f.title.includes("did not complete")) {
+    return {
+      id: "check-tls-versions",
+      label: "TLS protocol versions (deep)",
+      status: "warn",
+      detail: "Probes could not finish — see finding",
+    };
+  }
+  if (legacy) {
+    return {
+      id: "check-tls-versions",
+      label: "TLS protocol versions (deep)",
+      status: "fail",
+      detail: "TLS 1.0 or 1.1 accepted on a probe",
+    };
+  }
+  return {
+    id: "check-tls-versions",
+    label: "TLS protocol versions (deep)",
+    status: "pass",
+    detail: "No TLS 1.0/1.1 observed on isolated probes",
+  };
 }
 
 function tlsCertChecklist(findings: ScanFinding[]): ChecklistRow | null {
@@ -173,8 +224,14 @@ export function buildChecklistRows(findings: ScanFinding[]): ChecklistRow[] {
     });
   }
 
+  const caa = caaChecklistRow(findings);
+  if (caa) rows.push(caa);
+
   const cert = tlsCertChecklist(findings);
   if (cert) rows.push(cert);
+
+  const tlsVersions = tlsVersionsChecklistRow(findings);
+  if (tlsVersions) rows.push(tlsVersions);
 
   return rows;
 }
@@ -196,6 +253,8 @@ export function informationalFindings(
 
   return sorted.filter((f) => {
     if (f.module === "dns_health") return false;
+    if (f.module === "dns_caa") return false;
+    if (f.module === "tls_versions") return false;
     if (f.module === "tls_check") {
       if (f.id.includes("tls-check-expiry")) return false;
     }

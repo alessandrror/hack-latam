@@ -4,7 +4,7 @@ Base URL in local development: `http://localhost:3000`.
 
 ## `POST /api/scan`
 
-Runs a passive scan via [`runScanModules`](../src/lib/recon/run-scan.ts): **`subdomain_enum`** (crt.sh when `domain`), **`dns_health`** (TXT/DKIM lookups when `domain`), **`tls_check`** (TLS handshake to port **443** when `domain`). IPv4 scans skip domain-only modules.
+Runs a passive scan via [`runScanModules`](../src/lib/recon/run-scan.ts): **`subdomain_enum`** (crt.sh when `domain`), **`dns_health`** (TXT/DKIM lookups when `domain`), **`tls_check`** (TLS handshake to port **443** when `domain`). IPv4 scans skip domain-only modules. Optional **`mode`** `"quick" \| "deep"`: **`quick`** skips **`subdomain_enum`** and strips **`low`** severity findings from the response (defaults to **`deep`**).
 
 Implemented in [`src/app/api/scan/route.ts`](../src/app/api/scan/route.ts). Runtime: **Node.js** (`export const runtime = "nodejs"`).
 
@@ -23,7 +23,7 @@ A successful **`domain`** scan typically returns **`modules`** with three names 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `target` | `string` | Yes* | User input: domain, URL with hostname, or IPv4. |
-| `mode` | `"quick" \| "deep"` | No | **`deep`** requires a Clerk session (HTTP `401` if missing). Defaults to **`quick`**. |
+| `mode` | `"deep" \| "quick"` | No | Defaults to **`deep`**. **`quick`**: skips CT subdomain enumeration and omits **`low`** severity findings. Other values are treated as **`deep`**. |
 
 \* If `target` is missing or not a string, it is treated as empty and validation fails.
 
@@ -54,9 +54,9 @@ JSON body matches **`ScanResponseBody`** (see [`src/types/scan.ts`](../src/types
 | `target` | `string` | Original `target` string from the request. |
 | `normalizedTarget` | `string` | Parsed hostname (lowercased, no `www.`) or IPv4. |
 | `inputKind` | `"domain" \| "ip" \| "unknown"` | Classification; successful scans use `domain` or `ip`. |
+| `mode` | `"deep" \| "quick"` | Echoes effective scan mode (`deep` default). |
 | `findings` | `ScanFinding[]` | Risk items (may be empty, e.g. IP-only skippage). |
 | `modules` | `ScanModuleResult[]` | Per-module execution summary. |
-| `scanMode` | `"quick" \| "deep"` | Echo of the request `mode` (after auth check). |
 
 **`ScanFinding`**
 
@@ -85,7 +85,6 @@ JSON body matches **`ScanResponseBody`** (see [`src/types/scan.ts`](../src/types
   "target": "example.com",
   "normalizedTarget": "example.com",
   "inputKind": "domain",
-  "scanMode": "quick",
   "findings": [
     {
       "id": "subdomain-enum-crt-example.com",
@@ -118,7 +117,6 @@ JSON body matches **`ScanResponseBody`** (see [`src/types/scan.ts`](../src/types
   "target": "203.0.113.10",
   "normalizedTarget": "203.0.113.10",
   "inputKind": "ip",
-  "scanMode": "quick",
   "findings": [],
   "modules": [
     {
@@ -139,12 +137,6 @@ JSON body matches **`ScanResponseBody`** (see [`src/types/scan.ts`](../src/types
   ]
 }
 ```
-
-#### Error — `401 Unauthorized`
-
-| Condition | Body |
-|-----------|------|
-| `mode` is **`deep`** and the request has no Clerk session | Spanish error string explaining sign-in is required. |
 
 #### Error — `400 Bad Request`
 

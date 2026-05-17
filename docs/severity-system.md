@@ -18,6 +18,41 @@ From [CONTEXT.md](../CONTEXT.md):
 
 ## Module rules (today)
 
+### `tls_versions` (from `tls_versions_check`)
+
+Source: [`src/lib/recon/tls-versions-check.ts`](../src/lib/recon/tls-versions-check.ts)
+
+| Condition | Typical severity |
+|-----------|------------------|
+| TLS **1.0** or **1.1** negotiates on an isolated probe | `medium` |
+| Only **TLS 1.2+** negotiated (no 1.0/1.1) | `low` |
+| **No** isolated handshake succeeded | `medium` |
+
+Handshake probes use a **~10s** timeout **per** protocol band; runs **sequentially** (up to four attempts).
+
+### `dns_auth_details`
+
+Source: [`src/lib/recon/dns-auth-details.ts`](../src/lib/recon/dns-auth-details.ts)
+
+Only emits when SPF and/or DMARC TXT **exists** (missing records remain `dns_health`).
+
+| Finding | Typical severity |
+|---------|------------------|
+| SPF ends with **+all** | `medium` |
+| SPF ends with **-all** | `low` |
+| SPF ends with **~all** or **?all** or unclear tail | `low` |
+| DMARC **p=none** | `medium` |
+| DMARC **p=quarantine** or **p=reject** | `low` |
+| DMARC present but **p=** not parsed | `low` |
+
+### `dns_caa` (from `dns_caa_check`)
+
+Source: [`src/lib/recon/dns-caa-check.ts`](../src/lib/recon/dns-caa-check.ts)
+
+| Finding | Typical severity |
+|---------|------------------|
+| CAA present or absent (informational control) | `low` |
+
 ### `subdomain_enum` (crt.sh)
 
 Source: [`src/lib/recon/subdomains.ts`](../src/lib/recon/subdomains.ts) — `severityForSubdomainCount`:

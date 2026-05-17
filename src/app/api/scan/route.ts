@@ -1,22 +1,9 @@
 import { classifyAndNormalizeTarget } from "@/lib/recon/normalize-target";
 import { runScanModules } from "@/lib/recon/run-scan";
-import type { ScanResponseBody } from "@/types/scan";
-import { auth } from "@clerk/nextjs/server";
+import type { ScanMode, ScanResponseBody } from "@/types/scan";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
-
-function parseScanMode(body: unknown): "quick" | "deep" {
-  if (
-    typeof body === "object" &&
-    body !== null &&
-    "mode" in body &&
-    (body as { mode: unknown }).mode === "deep"
-  ) {
-    return "deep";
-  }
-  return "quick";
-}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -26,21 +13,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const mode = parseScanMode(body);
-
-  if (mode === "deep") {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json(
-        {
-          error:
-            "Debes iniciar sesión para un análisis profundo. Prueba escaneo rápido como invitado o entra.",
-        },
-        { status: 401 },
-      );
-    }
-  }
-
   const target =
     typeof body === "object" &&
     body !== null &&
@@ -48,6 +20,16 @@ export async function POST(request: Request) {
     typeof (body as { target: unknown }).target === "string"
       ? (body as { target: string }).target
       : "";
+
+  const rawMode =
+    typeof body === "object" &&
+    body !== null &&
+    "mode" in body &&
+    typeof (body as { mode: unknown }).mode === "string"
+      ? (body as { mode: string }).mode.trim().toLowerCase()
+      : "";
+  const mode: ScanMode =
+    rawMode === "quick" ? "quick" : "deep";
 
   const { kind, normalized } = classifyAndNormalizeTarget(target);
   if (!normalized || kind === "unknown") {
@@ -63,15 +45,16 @@ export async function POST(request: Request) {
   const { modules, findings } = await runScanModules({
     normalizedTarget: normalized,
     inputKind: kind,
+    mode,
   });
 
   const payload: ScanResponseBody = {
     target,
     normalizedTarget: normalized,
     inputKind: kind,
+    mode,
     findings,
     modules,
-    scanMode: mode,
   };
 
   return NextResponse.json(payload);
