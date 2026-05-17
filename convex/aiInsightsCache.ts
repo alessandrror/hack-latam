@@ -40,7 +40,6 @@ export const getCached = queryGeneric({
       return null;
     }
 
-    // Use the caller-provided timestamp so Convex can keep query caching effective.
     if (args.now - row.createdAt >= TWENTY_FOUR_H_MS) {
       return null;
     }
