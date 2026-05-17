@@ -5,6 +5,9 @@ import { CyberBackground } from "@/components/ui/CyberBackground";
 import { NewsletterCTA } from "@/components/ui/NewsletterCTA";
 import { SiteFooter } from "@/components/ui/SiteFooter";
 import { SiteHeader } from "@/components/ui/SiteHeader";
+import { Card, CardContent } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -46,30 +49,45 @@ export default async function BlogPostPage({ params }: PageProps) {
         <p className="mt-4 text-sm text-slate-500">{post.publishedAt}</p>
 
         <div className="mt-10 space-y-8 text-sm leading-relaxed text-slate-300">
-          <section className="neon-panel p-6">
-            <h2 className="text-lg font-semibold text-white">El problema</h2>
-            <p className="mt-3">{post.problem}</p>
+          <section>
+            <Card className="neon-panel gap-0 py-0 shadow-none ring-0">
+              <CardContent className="p-6">
+                <h2 className="text-lg font-semibold text-white">El problema</h2>
+                <p className="mt-3">{post.problem}</p>
+              </CardContent>
+            </Card>
           </section>
-          <section className="neon-panel p-6">
-            <h2 className="text-lg font-semibold text-white">Impacto</h2>
-            <p className="mt-3">{post.impact}</p>
+          <section>
+            <Card className="neon-panel gap-0 py-0 shadow-none ring-0">
+              <CardContent className="p-6">
+                <h2 className="text-lg font-semibold text-white">Impacto</h2>
+                <p className="mt-3">{post.impact}</p>
+              </CardContent>
+            </Card>
           </section>
-          <section className="neon-panel p-6">
-            <h2 className="text-lg font-semibold text-white">
-              Recomendaciones
-            </h2>
-            <ol className="mt-4 list-decimal space-y-3 pl-5">
-              {post.recommendations.map((rec) => (
-                <li key={rec.slice(0, 40)}>{rec}</li>
-              ))}
-            </ol>
+          <section>
+            <Card className="neon-panel gap-0 py-0 shadow-none ring-0">
+              <CardContent className="p-6">
+                <h2 className="text-lg font-semibold text-white">
+                  Recomendaciones
+                </h2>
+                <ol className="mt-4 list-decimal space-y-3 pl-5">
+                  {post.recommendations.map((rec) => (
+                    <li key={rec.slice(0, 40)}>{rec}</li>
+                  ))}
+                </ol>
+              </CardContent>
+            </Card>
           </section>
         </div>
 
         <div className="mt-12">
           <Link
             href="/scan"
-            className="inline-flex min-h-12 items-center rounded-xl btn-gradient-neon px-6 text-sm"
+            className={cn(
+              buttonVariants({ variant: "default", size: "lg" }),
+              "btn-gradient-neon inline-flex min-h-12 rounded-xl px-6 text-sm",
+            )}
           >
             Probar con un escaneo →
           </Link>

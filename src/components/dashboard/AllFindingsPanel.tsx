@@ -1,5 +1,6 @@
 import type { AiPerFindingInsight } from "@/types/ai-insights";
 import type { ScanFinding, Severity } from "@/types/scan";
+import { Card, CardContent } from "@/components/ui/card";
 import { FindingAiInsightSnippet } from "./FindingAiInsightSnippet";
 import { FindingDetailBlocks } from "./FindingDetailBlocks";
 
@@ -31,9 +32,13 @@ export function AllFindingsPanel({
 }: AllFindingsPanelProps) {
   if (findings.length === 0) {
     return (
-      <p className="neon-panel p-6 text-sm text-slate-500">
-        Sin hallazgos en este escaneo. Revisa activos y checklist.
-      </p>
+      <Card className="neon-panel shadow-none ring-0">
+        <CardContent className="p-6">
+          <p className="text-sm text-slate-500">
+            Sin hallazgos en este escaneo. Revisa activos y checklist.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -51,10 +56,9 @@ export function AllFindingsPanel({
           </h3>
           <ul className="mt-3 space-y-3">
             {group.items.map((finding) => (
-              <li
-                key={finding.id}
-                className="neon-panel p-4"
-              >
+              <li key={finding.id}>
+                <Card className="neon-panel gap-0 py-0 shadow-none ring-0">
+                  <CardContent className="p-4 space-y-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-semibold uppercase ${severityBadge(
@@ -77,6 +81,8 @@ export function AllFindingsPanel({
                 <FindingAiInsightSnippet
                   insight={perFindingInsightsById?.[finding.id] ?? null}
                 />
+                  </CardContent>
+                </Card>
               </li>
             ))}
           </ul>

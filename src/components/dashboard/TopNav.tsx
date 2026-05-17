@@ -1,5 +1,8 @@
 import type { FormEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
 type TopNavProps = {
   target: string;
   onTargetChange: (value: string) => void;
@@ -41,32 +44,34 @@ export function TopNav({
           <label htmlFor={inputId} className="sr-only">
             Target domain or URL
           </label>
-          <input
+          <Input
             id={inputId}
             name="target"
             value={target}
             onChange={(e) => onTargetChange(e.target.value)}
             placeholder="Domain or URL"
-            className="min-h-10 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 font-mono text-sm text-slate-50 outline-none ring-emerald-500/30 focus:border-emerald-500/40 focus:ring-2"
+            className="min-h-10 min-w-0 flex-1 rounded-lg border-slate-700 bg-slate-900 px-3 py-2 font-mono text-sm text-slate-50 ring-emerald-500/30 outline-none placeholder:text-slate-500 focus-visible:border-emerald-500/40 focus-visible:ring-2 dark:bg-slate-900"
             autoComplete="off"
             disabled={loading}
           />
           <div className="flex shrink-0 gap-2">
-            <button
+            <Button
               type="submit"
               disabled={loading || !target.trim()}
-              className="min-h-10 cursor-pointer rounded-lg border border-emerald-600/50 bg-emerald-600 px-4 text-sm font-semibold text-slate-950 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+              variant="outline"
+              className="min-h-10 cursor-pointer border-emerald-600/50 bg-emerald-600 text-slate-950 hover:bg-emerald-500 hover:text-slate-950 dark:bg-emerald-600 dark:hover:bg-emerald-500"
             >
               {loading ? "Scanning…" : "Scan"}
-            </button>
+            </Button>
             {onNewScan ? (
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={onNewScan}
-                className="min-h-10 cursor-pointer rounded-lg border border-slate-600 bg-transparent px-3 text-sm font-medium text-slate-300 transition hover:border-slate-500 hover:bg-slate-800/80"
+                className="min-h-10 border-slate-600 bg-transparent text-slate-300 hover:border-slate-500 hover:bg-slate-800/80 hover:text-slate-200 dark:bg-transparent dark:hover:bg-slate-800/80"
               >
                 New scan
-              </button>
+              </Button>
             ) : null}
           </div>
         </form>

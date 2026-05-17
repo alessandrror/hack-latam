@@ -5,6 +5,7 @@ import {
 } from "@/lib/dashboard/findings";
 import type { AiPerFindingInsight } from "@/types/ai-insights";
 import type { ScanFinding } from "@/types/scan";
+import { Card, CardContent } from "@/components/ui/card";
 import { FindingAiInsightSnippet } from "./FindingAiInsightSnippet";
 import { FindingDetailBlocks } from "./FindingDetailBlocks";
 
@@ -56,7 +57,6 @@ function badgeClasses(status: ChecklistStatus): string {
 type ChecklistColumnProps = {
   findings: ScanFinding[];
   checklistRowInsightsById?: Record<string, AiPerFindingInsight> | null;
-  /** Micro-insights for individual findings (used in Other signals list). */
   perFindingInsightsById?: Record<string, AiPerFindingInsight> | null;
 };
 
@@ -69,7 +69,8 @@ export function ChecklistColumn({
   const info = informationalFindings(findings, { excludeModuleChecks: true });
 
   return (
-    <section className="neon-panel flex flex-col p-4">
+    <Card className="neon-panel gap-0 py-0 shadow-none ring-0">
+      <CardContent className="flex flex-col gap-4 p-4">
       <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400/80">
         Checklist técnico
       </h2>
@@ -138,6 +139,7 @@ export function ChecklistColumn({
           ))}
         </ul>
       )}
-    </section>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,5 +1,9 @@
 import Link from "next/link";
+
 import { BLOG_POSTS } from "@/data/blog-posts";
+import { Card, CardContent } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function BlogPreviewSection() {
   const preview = BLOG_POSTS.slice(0, 3);
@@ -20,30 +24,38 @@ export function BlogPreviewSection() {
         </div>
         <Link
           href="/blog"
-          className="text-sm font-medium text-cyan-400 hover:text-cyan-300"
+          className={cn(
+            buttonVariants({ variant: "link", size: "sm" }),
+            "font-medium text-cyan-400 hover:text-cyan-300 dark:text-cyan-400 dark:hover:text-cyan-300",
+          )}
         >
           Ver todos los artículos →
         </Link>
       </div>
       <ul className="mt-10 grid gap-5 md:grid-cols-3">
         {preview.map((post) => (
-          <li key={post.slug}>
-            <Link
-              href={`/blog/${post.slug}`}
-              className="neon-panel flex h-full flex-col p-5 transition hover:border-cyan-400/35"
-            >
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400/90">
-                {post.category}
-              </span>
-              <h3 className="mt-3 text-lg font-semibold text-white">
-                {post.title}
-              </h3>
-              <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-400">
-                {post.excerpt}
-              </p>
-              <p className="mt-4 text-xs text-slate-500">
-                {post.readMinutes} min lectura
-              </p>
+          <li key={post.slug} className="h-full">
+            <Link href={`/blog/${post.slug}`} className="block h-full">
+              <Card
+                className={cn(
+                  "neon-panel h-full gap-0 py-0 shadow-none ring-0 transition hover:border-cyan-400/35 dark:hover:bg-transparent",
+                )}
+              >
+                <CardContent className="flex h-full flex-col p-5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400/90">
+                    {post.category}
+                  </span>
+                  <h3 className="mt-3 text-lg font-semibold text-white">
+                    {post.title}
+                  </h3>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-400">
+                    {post.excerpt}
+                  </p>
+                  <p className="mt-4 text-xs text-slate-500">
+                    {post.readMinutes} min lectura
+                  </p>
+                </CardContent>
+              </Card>
             </Link>
           </li>
         ))}

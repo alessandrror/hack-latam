@@ -1,6 +1,7 @@
 import { riskFindings } from "@/lib/dashboard/findings";
 import type { AiPerFindingInsight } from "@/types/ai-insights";
 import type { ScanFinding, Severity } from "@/types/scan";
+import { Card, CardContent } from "@/components/ui/card";
 import { FindingAiInsightSnippet } from "./FindingAiInsightSnippet";
 import { FindingDetailBlocks } from "./FindingDetailBlocks";
 
@@ -31,7 +32,8 @@ export function RiskColumn({
   const risks = riskFindings(findings);
 
   return (
-    <section className="neon-panel flex flex-col p-4">
+    <Card className="neon-panel gap-0 py-0 shadow-none ring-0">
+      <CardContent className="flex flex-col gap-4 p-4">
       <h2 className="text-xs font-semibold uppercase tracking-wider text-cyan-400/80">
         Riesgos prioritarios
       </h2>
@@ -77,6 +79,7 @@ export function RiskColumn({
           ))}
         </ul>
       )}
-    </section>
+      </CardContent>
+    </Card>
   );
 }
