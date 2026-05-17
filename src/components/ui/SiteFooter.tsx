@@ -6,24 +6,27 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
           <p className="text-sm font-semibold text-foreground">Hack LATAM</p>
-          <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+          <p className="mt-1 max-w-sm text-xs text-foreground/65">
             Visibilidad defensiva de tu huella externa para PYMEs: solo señales
             públicas y pasivas; sin explotación ni pentest.
           </p>
         </div>
-        <nav className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-          <Link href="/scan" className="hover:text-accent">
+        <nav className="flex flex-wrap gap-4 text-sm font-medium text-foreground/75">
+          <Link href="/scan" className="underline-offset-4 hover:text-accent hover:underline">
             Escanear
           </Link>
-          <Link href="/blog" className="hover:text-accent">
+          <Link href="/blog" className="underline-offset-4 hover:text-accent hover:underline">
             Blog
           </Link>
-          <Link href="/#newsletter" className="hover:text-accent">
+          <Link
+            href="/#newsletter"
+            className="underline-offset-4 hover:text-accent hover:underline"
+          >
             Newsletter
           </Link>
         </nav>
       </div>
-      <p className="border-t border-border py-4 text-center text-xs text-muted-foreground">
+      <p className="border-t border-border py-4 text-center text-xs text-foreground/60">
         © {new Date().getFullYear()} Hack LATAM · hackathon def/acc · resiliencia defensiva
       </p>
     </footer>

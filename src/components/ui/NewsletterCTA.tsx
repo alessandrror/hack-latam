@@ -26,7 +26,7 @@ export function NewsletterCTA({ id = "newsletter" }: { id?: string }) {
     >
       <CardContent className="px-6 py-10 sm:px-10">
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-accent">
+          <p className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">
             Newsletter semanal
           </p>
           <h2 className="mt-3 text-2xl font-bold text-foreground sm:text-3xl">

@@ -9,7 +9,7 @@ export function LandingHero() {
     <section className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 sm:py-28">
       <Badge
         variant="outline"
-        className="inline-flex rounded-full border-border bg-muted px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-foreground shadow-none hover:bg-muted"
+        className="inline-flex rounded-full border-border bg-secondary px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-foreground/85 shadow-none hover:bg-secondary"
       >
         Recon pasivo · Defensa
       </Badge>

@@ -12,7 +12,7 @@ export function BlogPreviewSection() {
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-foreground/80">
             Blog
           </p>
           <h2 className="mt-3 text-3xl font-bold text-foreground">
@@ -43,7 +43,7 @@ export function BlogPreviewSection() {
                 )}
               >
                 <CardContent className="flex h-full flex-col p-5">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-accent">
+                  <span className="text-xs font-bold uppercase tracking-wide text-foreground/85">
                     {post.category}
                   </span>
                   <h3 className="mt-3 text-lg font-semibold text-foreground">
@@ -52,7 +52,7 @@ export function BlogPreviewSection() {
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
                     {post.excerpt}
                   </p>
-                  <p className="mt-4 text-xs text-muted-foreground">
+                  <p className="mt-4 text-xs text-foreground/60">
                     {post.readMinutes} min lectura
                   </p>
                 </CardContent>

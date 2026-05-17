@@ -8,7 +8,7 @@ export function FeaturesSection() {
   return (
     <section id="funcionalidades" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
       <div className="text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+        <p className="text-sm font-bold uppercase tracking-[0.18em] text-foreground/80">
           Plataforma
         </p>
         <h2 className="mt-3 text-3xl font-bold text-foreground">
@@ -33,10 +33,10 @@ export function FeaturesSection() {
                   <Badge
                     variant="outline"
                     className={cn(
-                      "shrink-0 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-none hover:bg-transparent",
+                      "shrink-0 px-2.5 py-1 text-xs font-bold uppercase tracking-wide shadow-none",
                       feature.status === "live"
-                        ? "border-primary/20 bg-primary/5 text-primary"
-                        : "border-muted-foreground/25 bg-muted text-muted-foreground",
+                        ? "border-transparent bg-accent text-accent-foreground hover:bg-accent"
+                        : "border-border bg-secondary text-secondary-foreground hover:bg-secondary",
                     )}
                   >
                     {feature.status === "live" ? "Activo" : "Próximo"}
