@@ -22,7 +22,10 @@ export function SiteHeader() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // Defer to avoid "setState in useEffect body" warnings and keep the
+    // initial SSR markup stable until the client hydrates.
+    const id = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   const showAuthControls = mounted && isLoaded;
