@@ -520,6 +520,8 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
             onOwnershipVerified={() => {
               // `verification` is sourced from Convex; once it updates, the UI unblocks deep mode.
             }}
+            relatedEmails={relatedEmails}
+            onRelatedEmailsChange={setRelatedEmails}
           />
         </ScanMainStart>
       );
