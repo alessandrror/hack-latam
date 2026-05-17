@@ -4,9 +4,10 @@ export const MODULE_DISPLAY_ORDER = [
   "subdomain_enum",
   "dns_health",
   "dns_auth_details",
-  "dns_caa",
+  "dns_caa_check",
   "tls_check",
-  "tls_versions",
+  "tls_versions_check",
+  "osint_passive",
 ] as const;
 
 export function sortedFindings(findings: ScanFinding[]): ScanFinding[] {
@@ -62,7 +63,7 @@ export interface ChecklistRow {
 }
 
 function caaChecklistRow(findings: ScanFinding[]): ChecklistRow | null {
-  const f = findings.find((x) => x.module === "dns_caa");
+  const f = findings.find((x) => x.module === "dns_caa_check");
   if (!f?.metadata || typeof f.metadata !== "object") return null;
   const present = (f.metadata as { caaPresent?: boolean }).caaPresent === true;
   return {
@@ -76,7 +77,7 @@ function caaChecklistRow(findings: ScanFinding[]): ChecklistRow | null {
 }
 
 function tlsVersionsChecklistRow(findings: ScanFinding[]): ChecklistRow | null {
-  const f = findings.find((x) => x.module === "tls_versions");
+  const f = findings.find((x) => x.module === "tls_versions_check");
   if (!f) return null;
 
   const meta =
@@ -253,8 +254,8 @@ export function informationalFindings(
 
   return sorted.filter((f) => {
     if (f.module === "dns_health") return false;
-    if (f.module === "dns_caa") return false;
-    if (f.module === "tls_versions") return false;
+    if (f.module === "dns_caa_check") return false;
+    if (f.module === "tls_versions_check") return false;
     if (f.module === "tls_check") {
       if (f.id.includes("tls-check-expiry")) return false;
     }

@@ -30,7 +30,7 @@ Base URL in local development: `http://localhost:3000`.
 
 ## `POST /api/scan`
 
-Runs a passive scan via [`runScanModules`](../src/lib/recon/run-scan.ts). **Registered modules (six):**
+Runs a passive scan via [`runScanModules`](../src/lib/recon/run-scan.ts). **Registered modules (seven):**
 
 - **`subdomain_enum`** — certificate transparency hostnames (**runs in `deep` only** for domains).
 - **`dns_health`** — SPF / DMARC / common DKIM selector probes (**domain**).
@@ -38,14 +38,20 @@ Runs a passive scan via [`runScanModules`](../src/lib/recon/run-scan.ts). **Regi
 - **`tls_versions_check`** — legacy TLS negotiation probes (**`deep` + domain**).
 - **`dns_auth_details`** — SPF/DMARC policy strictness (**`deep` + domain**).
 - **`dns_caa_check`** — CAA at zone apex (**`deep` + domain**).
+- **`osint_passive`** — Passive OSINT (**`security.txt`**, HTTPS headers, MTA‑STS/TLS‑RPT/BIMI TXT, apex DNSSEC hint); targets the **normalized primary hostname plus same‑apex RHS domains extracted from pasted `emails`** (optional request field).
 
-IPv4 scans **skip** domain-only modules. Optional **`mode`** `"quick" \| "deep"`: **`quick`** skips **`subdomain_enum`**, all **`deep`-only** modules, and **filters out `low`** severity findings from the response (defaults to **`deep`**).
+IPv4 scans **skip** hostname-only modules. Optional **`mode`** `"quick" \| "deep"`: **`quick`** skips **`subdomain_enum`**, all **`deep`-only** modules, and filters out most **`low`** severity findings (**`osint_passive` lows are retained**).
+
+**Auth / ownership:**
+
+- **`quick`** scans do **not** require sign-in today.
+- **`deep`** scans require Clerk session **plus** Convex **verified apex** alignment (unless the apex is configured as a bypass demo list — see [`ownership-bypass.ts`](../src/lib/verify/ownership-bypass.ts)). Expect `403` with `OWNERSHIP_REQUIRED` when unverified.
 
 Implemented in [`src/app/api/scan/route.ts`](../src/app/api/scan/route.ts). Runtime: **Node.js** (`export const runtime = "nodejs"`).
 
 ### Example response shape (conceptual)
 
-A successful **`domain`** **`deep`** scan returns **`modules`** with up to **six** names and multiple **`findings`** (hostname footprint, SPF/DMARC/DKIM, TLS rows, optional legacy TLS / DMARC policy / CAA). Inspect `curl`/browser JSON while developing.
+A successful **`domain`** **`deep`** scan returns **`modules`** with up to **seven** names and **`findings`** spanning CT/DNS/TLS/OSINT/email hygiene.
 
 ### Request
 
@@ -58,7 +64,8 @@ A successful **`domain`** **`deep`** scan returns **`modules`** with up to **six
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `target` | `string` | Yes* | User input: domain, URL with hostname, or IPv4. |
-| `mode` | `"deep" \| "quick"` | No | Defaults to **`deep`**. **`quick`**: skips CT and deep-only modules; omits **`low`** severity findings. Other values are treated as **`deep`**. |
+| `mode` | `"deep" \| "quick"` | No | Defaults to **`deep`**. **`quick`**: skips CT and deep-only modules; omits **`low`** severity findings unless the module is **`osint_passive`**. |
+| `emails` | `string \| string[]` | No | Free-form pasted mailboxes (**≤50 whitespace/comma-separated tokens**, **≤10 unique RHS domains** server-side). Only domains under the registrable apex of `target` are scanned; mailbox locals never persist server-side beyond the audit summary. Omit or leave blank to disable this path. |
 
 \* If `target` is missing or not a string, it is treated as empty and validation fails.
 
@@ -90,8 +97,9 @@ JSON body matches **`ScanResponseBody`** (see [`src/types/scan.ts`](../src/types
 | `normalizedTarget` | `string` | Parsed hostname (lowercased, no `www.`) or IPv4. |
 | `inputKind` | `"domain" \| "ip" \| "unknown"` | Classification; successful scans use `domain` or `ip`. |
 | `mode` | `"deep" \| "quick"` | Echoes effective scan mode (`deep` default). |
-| `findings` | `ScanFinding[]` | Risk items (may be empty, e.g. IP-only skippage). |
-| `modules` | `ScanModuleResult[]` | Per-module execution summary. |
+| `findings` | `ScanFinding[]` | Risk items (may be empty, e.g. IP-only skippage). May include **`osint_passive`** findings with `metadata.subjectSource`. |
+| `modules` | `ScanModuleResult[]` | Per-module execution summary (`osint_passive` included last by default grouping). |
+| `emailDomainSummary` | [`EmailDomainSummary`](../src/types/scan.ts) (optional) | Present when **`emails`** body was non-empty after trim — lists eligible/skipped apex domains plus truncation flags (**no mailbox parts**). |
 
 **`ScanFinding`**
 

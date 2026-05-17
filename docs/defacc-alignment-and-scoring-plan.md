@@ -79,7 +79,7 @@ Rows: product capabilities. **Status:** Implemented / Partial / Draft (spec only
 | Feature | Status | Def/acc criterion | Scoring | Notes / links |
 |---------|--------|---------------------|---------|----------------|
 | **Scan pipeline** (`POST /api/scan`) | **Implemented** | Cybersecurity | **High** | [run-scan.ts](../src/lib/recon/run-scan.ts), [recon-modules.md](recon-modules.md) |
-| **Six modules** (CT, DNS health, TLS, TLS versions, DNS auth details, CAA) | **Implemented** | Cybersecurity | **High** | Quick skips deep-only modules + CT; filters `low` in quick — see §7 |
+| **Six modules + OSINT layer** (CT, DNS health + auth details + CAA, TLS + legacy TLS probes, **`osint_passive`**) | **Implemented** | Cybersecurity | **High** | Quick skips deep-only modules + CT; filters `low` except `osint_passive`; see §7 |
 | **Quick vs deep mode** | **Implemented** | Cybersecurity | **Med** | UX + API `mode` |
 | **AI one-shot insights** (`POST /api/ai/insights`) | **Implemented** | Human agency / AI | **High** | [route.ts](../src/app/api/ai/insights/route.ts), [insights-prompt.ts](../src/lib/ai/insights-prompt.ts) |
 | **AI guided chat (multi-turn)** | **Draft** | Human agency / AI | **High** (when built) | [ai-chat-refinement-prd.md](ai-chat-refinement-prd.md) — **P3** |
@@ -89,7 +89,7 @@ Rows: product capabilities. **Status:** Implemented / Partial / Draft (spec only
 | **Rate limits / abuse controls** | **Not started** | Ethics / disqualifiers | **High** | Open `POST /api/scan` risk — see §10 |
 | **Roadmap modules** (Shodan, SSL Labs-style, HIBP, etc.) | **Not started** | Cybersecurity | **Med** | [recon-modules.md](recon-modules.md) roadmap |
 | **Marketing copy ↔ passive reality** | **Partial** | Disqualifiers | **Med** | Align hero/metadata — Tier A backlog |
-| **API / user docs** (6 modules, quick vs deep) | **Partial** | Credibility | **Med** | [api-reference.md](api-reference.md) reconciled with code |
+| **API / user docs** (7 modules, optional email OSINT payload, quick vs deep) | **Partial** | Credibility | **Med** | [api-reference.md](api-reference.md) reconciled iteratively |
 | **UI / visual identity** (Trust & Authority) | **Implemented** | Credibility / disqualifiers (“generic AI look”) | **Low–Med** | Navy + sky semantic tokens ([globals.css](../src/app/globals.css)); **Plus Jakarta Sans** + **IBM Plex Mono** for data ([layout.tsx](../src/app/layout.tsx)); sharper radii (`--radius`); medium/warning affordances use sky (not violet/amber). See §13. |
 
 ---
@@ -106,8 +106,9 @@ Rows: product capabilities. **Status:** Implemented / Partial / Draft (spec only
 | `tls_versions_check` | Domain + **deep** | Legacy TLS 1.0/1.1 probes ([tls-versions-check.ts](../src/lib/recon/tls-versions-check.ts)). |
 | `dns_auth_details` | Domain + **deep** | SPF/DMARC policy strictness ([dns-auth-details.ts](../src/lib/recon/dns-auth-details.ts)). |
 | `dns_caa_check` | Domain + **deep** | CAA presence ([dns-caa-check.ts](../src/lib/recon/dns-caa-check.ts)). |
+| `osint_passive` | Domain primary host **or** pasted `emails` (same apex) | Passive OSINT surfaces ([osint-passive.ts](../src/lib/recon/osint-passive.ts)) — skips only when neither a domain primary nor actionable email-derived hosts/meta exist. |
 
-**Mode:** `quick` skips CT and deep-only modules and **filters out `low`** severity findings from the response. **Single source of truth:** keep [recon-modules.md](recon-modules.md) in sync with `MODULES` in `run-scan.ts`.
+**Mode:** `quick` skips CT and deep-only modules and drops most **`low`** severity findings (**`osint_passive`** keeps low rows for visibility). **Single source of truth:** keep [recon-modules.md](recon-modules.md) in sync with `MODULES` in `run-scan.ts`.
 
 **Convex note:** [ScanHistorySidebar.tsx](../src/components/scan/ScanHistorySidebar.tsx) exists but **is not mounted** in `ScanWorkspace`; `createScan` / `updateScanInsights` **not wired** from scan/insights flows. Treat “cloud history live in product” as **roadmap** until wired.
 
@@ -126,7 +127,7 @@ Order agreed for implementation narrative: **P1 Domain ownership → P2 Convex p
 ### Tier A — High impact, low cost (backlog)
 
 - [ ] Align **marketing copy** with passive snapshot reality (`LandingHero.tsx`, root `layout.tsx`, CTAs).
-- [ ] Harmonize **README / api-reference / user-guide** — six modules, quick vs deep.
+- [ ] Harmonize **README / api-reference / user-guide** — seven modules (+ optional email OSINT inputs), quick vs deep.
 - [ ] **Authorized targets** checkbox + link to [threat-model.md](threat-model.md) near submit (`ScanFormPanel.tsx`).
 - [ ] **Judging deck:** reuse §5–§6 tables for Q&A.
 - [ ] **Presentation / visual trust:** keep operator/SMB tooling tone (not generic “AI SaaS” violet stacks) — baseline in §13.
@@ -172,7 +173,7 @@ Order agreed for implementation narrative: **P1 Domain ownership → P2 Convex p
 | Risk | Impact | Mitigation |
 |------|--------|------------|
 | Copy **overclaims** (real-time threats, “target infrastructure”) | Credibility | Use “snapshot after submit”, **observed public surface** |
-| **Docs lag** (3 vs 6 modules) | Reviewer confusion | Keep [api-reference.md](api-reference.md) and README aligned with §7 |
+| **Docs lag** (module count mismatch) | Reviewer confusion | Keep [api-reference.md](api-reference.md) and README aligned with §7 |
 | **Abuse:** open `POST /api/scan` | Offensive misuse narrative | Rate limits, auth, CAPTCHA; P1 ownership gate for deep |
 | **Convex “history”** not wired | Trust / demo gap | Mount sidebar + `createScan` or soften copy |
 | **AI insights** uncached | Cost / no cache demo | Wire `aiInsightsCache` or document omission |

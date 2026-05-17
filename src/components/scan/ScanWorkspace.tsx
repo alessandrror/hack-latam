@@ -86,6 +86,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     [],
   );
   const [convexScanId, setConvexScanId] = useState<string | null>(null);
+  const [relatedEmails, setRelatedEmails] = useState("");
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(
     null,
   );
@@ -186,6 +187,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     setSelectedHistoryId(null);
     setConvexScanId(null);
     setMobileSidebarOpen(false);
+    setRelatedEmails("");
   }, [resetAi]);
 
   const handleSelectHistory = useCallback(
@@ -201,6 +203,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
       setActiveTab("overview");
       setSelectedHistoryId(entry.id);
       setMobileSidebarOpen(false);
+      setRelatedEmails("");
     },
     [],
   );
@@ -227,10 +230,15 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     setLoading(true);
     setSelectedHistoryId(null);
     try {
+      const scanBody: Record<string, unknown> = { target, mode: scanMode };
+      if (relatedEmails.trim()) {
+        scanBody.emails = relatedEmails;
+      }
+
       const response = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, mode: scanMode }),
+        body: JSON.stringify(scanBody),
       });
       const body: unknown = await response.json();
       if (!response.ok) {
@@ -406,6 +414,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
       return (
         <ScanOverviewPanel
           normalizedTarget={displayTarget}
+          emailDomainSummary={resolvedResult.emailDomainSummary}
           findings={findingsForGrid}
           modules={moduleRows}
           totalHostnames={hostAggregate.total}

@@ -81,7 +81,9 @@ export function AiChatPanel({
   const chipsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMessages(loadChatMessages(storageKey));
+    queueMicrotask(() => {
+      setMessages(loadChatMessages(storageKey));
+    });
   }, [storageKey]);
 
   useEffect(() => {

@@ -3,12 +3,22 @@
 import { SignInButton } from "@clerk/nextjs";
 import { Zap } from "lucide-react";
 import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
 import type { TargetInputKind } from "@/lib/recon/normalize-target";
+import { cn } from "@/lib/utils";
+import { apexBypassesOwnershipVerification } from "@/lib/verify/ownership-bypass";
 
 import {
   OwnershipVerificationSection,
@@ -33,6 +43,9 @@ type ScanFormPanelProps = {
   /** `undefined` while Convex `getStatus` is loading */
   verification: VerificationSnapshot | undefined;
   onOwnershipVerified: () => void;
+  /** Optional same-apex mailboxes (domains only OSINT side; pasted text capped server-side). */
+  relatedEmails: string;
+  onRelatedEmailsChange: (value: string) => void;
 };
 
 const MODE_OPTIONS: {
@@ -66,22 +79,52 @@ export function ScanFormPanel({
   apexDomain,
   verification,
   onOwnershipVerified,
+  relatedEmails,
+  onRelatedEmailsChange,
 }: ScanFormPanelProps) {
   const charCount = target.length;
   const deepRequiresAuth =
     scanMode === "deep" && authLoaded && !isAuthenticated;
   const deepIpBlocked =
     scanMode === "deep" && authLoaded && targetKind === "ip";
+  const ownershipBypassDemo = Boolean(
+    apexDomain && apexBypassesOwnershipVerification(apexDomain),
+  );
   const deepOwnershipBlocked =
     scanMode === "deep" &&
     authLoaded &&
     isAuthenticated &&
     Boolean(apexDomain) &&
-    verification?.status !== "verified";
+    verification?.status !== "verified" &&
+    !ownershipBypassDemo;
+
+  const [verifyModalOpen, setVerifyModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (verification?.status === "verified") {
+      // Deferred close avoids react-hooks/set-state-in-effect cascading render warning.
+      queueMicrotask(() => {
+        setVerifyModalOpen(false);
+      });
+    }
+  }, [verification?.status]);
+
+  function handleFormSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (loading || !target.trim()) return;
+    if (deepRequiresAuth || deepIpBlocked) return;
+
+    if (deepOwnershipBlocked) {
+      setVerifyModalOpen(true);
+      return;
+    }
+
+    onSubmit(e);
+  }
 
   return (
     <div className="w-full space-y-6 text-left">
-      <form onSubmit={onSubmit} className="space-y-6">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
         <div className="space-y-2">
           <label htmlFor="scan-target" className="sr-only">
             Dominio o URL
@@ -111,6 +154,38 @@ export function ScanFormPanel({
               {charCount}/256
             </span>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <label
+            htmlFor="scan-related-emails"
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Correos opcionales (mismo apex)
+          </label>
+          <Textarea
+            id="scan-related-emails"
+            value={relatedEmails}
+            disabled={loading}
+            onChange={(e) =>
+              onRelatedEmailsChange(e.target.value.slice(0, 8192))
+            }
+            placeholder={`uno@tu-dominio.com
+otro@mail.tu-dominio.com`}
+            maxLength={8192}
+            rows={3}
+            className={cn(
+              "resize-y rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 font-mono text-sm shadow-sm",
+              "transition-[border-color,box-shadow] duration-150",
+              "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none",
+              "placeholder:text-muted-foreground/75",
+            )}
+          />
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            Solo dominios registrables bajo el mismo apex que el objetivo pasan OSINT pasivo por
+            correo. No guardamos direcciones completas en el historial audit — solo dominios y
+            conteos.
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -182,11 +257,7 @@ export function ScanFormPanel({
         <Button
           type="submit"
           disabled={
-            loading ||
-            !target.trim() ||
-            deepRequiresAuth ||
-            deepOwnershipBlocked ||
-            deepIpBlocked
+            loading || !target.trim() || deepRequiresAuth || deepIpBlocked
           }
           size="lg"
           className="h-12 w-full rounded-full text-sm font-semibold shadow-sm transition-colors duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-40"
@@ -197,7 +268,8 @@ export function ScanFormPanel({
         {scanMode === "deep" &&
         isAuthenticated &&
         apexDomain &&
-        verification === undefined ? (
+        verification === undefined &&
+        !ownershipBypassDemo ? (
           <p
             className="text-center text-[11px] text-muted-foreground"
             role="status"
@@ -210,20 +282,14 @@ export function ScanFormPanel({
         isAuthenticated &&
         apexDomain &&
         verification !== undefined &&
-        verification?.status !== "verified" &&
-        !deepIpBlocked ? (
-          <>
-            <p className="text-center text-[11px] leading-snug text-muted-foreground">
-              El modo profundo solo corre tras verificar el apex{" "}
-              <span className="font-mono text-foreground">{apexDomain}</span>.
-            </p>
-            <OwnershipVerificationSection
-              apexDomain={apexDomain}
-              verification={verification}
-              disabled={loading}
-              onVerified={onOwnershipVerified}
-            />
-          </>
+        (verification === null || verification.status !== "verified") &&
+        !deepIpBlocked &&
+        !ownershipBypassDemo ? (
+          <p className="text-center text-[11px] leading-snug text-muted-foreground">
+            Pulsa <strong className="text-foreground">Lanzar comprobaciones</strong>{" "}
+            para abrir la verificación del apex{" "}
+            <span className="font-mono text-foreground">{apexDomain}</span>.
+          </p>
         ) : null}
 
         {deepIpBlocked ? (
@@ -253,6 +319,40 @@ export function ScanFormPanel({
           </p>
         ) : null}
       </form>
+
+      <Dialog open={verifyModalOpen} onOpenChange={setVerifyModalOpen}>
+        <DialogContent className="gap-0 sm:max-w-md" showCloseButton>
+          <DialogHeader>
+            <DialogTitle>Verificar titularidad</DialogTitle>
+            <DialogDescription>
+              Demuestra control sobre{" "}
+              <span className="font-mono text-foreground">
+                {apexDomain ?? "tu dominio"}
+              </span>{" "}
+              con un registro DNS TXT o un archivo HTTPS en{" "}
+              <span className="font-mono">.well-known</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            {apexDomain && verification !== undefined ? (
+              <OwnershipVerificationSection
+                apexDomain={apexDomain}
+                verification={verification}
+                disabled={loading}
+                embedded
+                onVerified={() => {
+                  setVerifyModalOpen(false);
+                  onOwnershipVerified();
+                }}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground" role="status">
+                Comprobando estado de verificación…
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <p className="flex items-start gap-2.5 text-[11px] leading-relaxed text-muted-foreground">
         <Zap

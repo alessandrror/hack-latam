@@ -2,6 +2,7 @@ import type { ScanModuleContext } from "@/lib/recon/scan-context";
 import { collectDnsAuthDetailsFindings } from "@/lib/recon/dns-auth-details";
 import { collectDnsCaaFindings } from "@/lib/recon/dns-caa-check";
 import { collectDnsHealthFindings } from "@/lib/recon/dns-health";
+import { collectPassiveOsintFindings } from "@/lib/recon/osint-passive";
 import { enumerateSubdomainsFromCrtSh } from "@/lib/recon/subdomains";
 import { collectTlsFindings } from "@/lib/recon/tls-check";
 import { collectTlsVersionFindings } from "@/lib/recon/tls-versions-check";
@@ -16,6 +17,17 @@ interface RegisteredModule {
   name: string;
   skipReason: (ctx: ScanModuleContext) => string | null;
   run: (ctx: ScanModuleContext) => Promise<ScanFinding[]>;
+}
+
+function emailOsintMetaUseful(
+  meta: ScanModuleContext["emailOsintMeta"],
+): boolean {
+  if (!meta) return false;
+  return (
+    meta.skippedExternalDomains.length > 0 ||
+    meta.truncatedEmailList ||
+    meta.truncatedUniqueDomainList
+  );
 }
 
 const MODULES: RegisteredModule[] = [
@@ -74,6 +86,18 @@ const MODULES: RegisteredModule[] = [
           ? "Quick scan skips CAA lookups."
           : null,
     run: async (ctx) => collectDnsCaaFindings(ctx.normalizedTarget),
+  },
+  {
+    name: "osint_passive",
+    skipReason: (ctx) => {
+      const n = ctx.osintHostnames?.length ?? 0;
+      const metaOk = emailOsintMetaUseful(ctx.emailOsintMeta);
+      if (n === 0 && !metaOk) {
+        return "Passive OSINT needs a domain target or pasted emails tied to the same apex.";
+      }
+      return null;
+    },
+    run: async (ctx) => collectPassiveOsintFindings(ctx),
   },
 ];
 
@@ -139,7 +163,9 @@ export async function runScanModules(
 
   const findings =
     ctx.mode === "quick"
-      ? allFindings.filter((f) => f.severity !== "low")
+      ? allFindings.filter(
+          (f) => f.severity !== "low" || f.module === "osint_passive",
+        )
       : allFindings;
 
   return { modules, findings };

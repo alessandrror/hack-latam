@@ -1,6 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  OWNERSHIP_GUIDE_DNS_LINKS_ES,
+  OWNERSHIP_GUIDE_DNS_STEPS_ES,
+  OWNERSHIP_GUIDE_HTTPS_LINKS_ES,
+  OWNERSHIP_GUIDE_HTTPS_STEPS_ES,
+} from "@/lib/verify/ownership-guide";
 import { cn } from "@/lib/utils";
 import { Copy, Loader2, ShieldCheck } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -20,6 +26,8 @@ type OwnershipVerificationSectionProps = {
   verification: VerificationSnapshot;
   disabled?: boolean;
   onVerified: () => void;
+  /** Hide card chrome + hero when shown inside a dialog */
+  embedded?: boolean;
 };
 
 async function copyText(text: string): Promise<boolean> {
@@ -36,6 +44,7 @@ export function OwnershipVerificationSection({
   verification,
   disabled,
   onVerified,
+  embedded = false,
 }: OwnershipVerificationSectionProps) {
   const [method, setMethod] = useState<VerificationMethod>("dns_txt");
   const [initLoading, setInitLoading] = useState(false);
@@ -48,6 +57,11 @@ export function OwnershipVerificationSection({
 
   const token =
     verification?.status === "pending" ? verification.token : undefined;
+
+  const effectiveMethod: VerificationMethod =
+    verification?.status === "pending" && verification.method
+      ? verification.method
+      : method;
 
   const handleInitiate = useCallback(async () => {
     setLocalError(null);
@@ -130,27 +144,35 @@ export function OwnershipVerificationSection({
   return (
     <div
       className={cn(
-        "space-y-4 rounded-2xl border border-border/60 bg-muted/20 px-4 py-4 text-left",
-        "dark:bg-muted/10",
+        "space-y-4 text-left",
+        !embedded &&
+          "rounded-2xl border border-border/60 bg-muted/20 px-4 py-4 dark:bg-muted/10",
       )}
     >
-      <div className="flex items-start gap-2.5">
-        <ShieldCheck
-          className="mt-0.5 size-5 shrink-0 text-primary"
-          aria-hidden
-        />
-        <div className="space-y-1">
-          <p className="text-sm font-semibold text-foreground">
-            Verificación de titularidad (modo profundo)
-          </p>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Apex verificado:{" "}
-            <span className="font-mono text-foreground">{apexDomain}</span>.
-            Publica el token y confirma con el botón inferior. Solo objetivos
-            autorizados — pasivo, como en el descargo del escáner.
-          </p>
+      {!embedded ? (
+        <div className="flex items-start gap-2.5">
+          <ShieldCheck
+            className="mt-0.5 size-5 shrink-0 text-primary"
+            aria-hidden
+          />
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-foreground">
+              Verificación de titularidad (modo profundo)
+            </p>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Apex verificado:{" "}
+              <span className="font-mono text-foreground">{apexDomain}</span>.
+              Publica el token y confirma con el botón inferior. Solo objetivos
+              autorizados — pasivo, como en el descargo del escáner.
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          Publica el token (DNS o archivo HTTPS) y pulsa verificar. Solo
+          objetivos autorizados.
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <button
@@ -188,6 +210,67 @@ export function OwnershipVerificationSection({
           Archivo HTTPS
         </button>
       </div>
+
+      <details className="rounded-xl border border-border/50 bg-background/60 p-3 text-[11px] leading-relaxed text-muted-foreground">
+        <summary className="cursor-pointer list-none font-medium text-foreground [&::-webkit-details-marker]:hidden">
+          <span className="underline-offset-4 hover:underline">
+            ¿Dónde publico esto?
+          </span>
+        </summary>
+        <div className="mt-2 space-y-2 border-t border-border/40 pt-2">
+          {effectiveMethod === "dns_txt" ? (
+            <>
+              <ol className="list-decimal space-y-1.5 pl-4 marker:text-muted-foreground">
+                {OWNERSHIP_GUIDE_DNS_STEPS_ES.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ol>
+              <p className="font-medium text-foreground">
+                Paneles conocidos — añadir TXT
+              </p>
+              <ul className="list-disc space-y-1 pl-4 marker:text-muted-foreground">
+                {OWNERSHIP_GUIDE_DNS_LINKS_ES.map(({ label, href }) => (
+                  <li key={href}>
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-primary underline underline-offset-2 hover:text-primary/90"
+                    >
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <>
+              <ol className="list-decimal space-y-1.5 pl-4 marker:text-muted-foreground">
+                {OWNERSHIP_GUIDE_HTTPS_STEPS_ES.map((step, i) => (
+                  <li key={i}>{step}</li>
+                ))}
+              </ol>
+              <p className="font-medium text-foreground">
+                Next.js / Vercel (archivos en raíz web)
+              </p>
+              <ul className="list-disc space-y-1 pl-4 marker:text-muted-foreground">
+                {OWNERSHIP_GUIDE_HTTPS_LINKS_ES.map(({ label, href }) => (
+                  <li key={href}>
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-primary underline underline-offset-2 hover:text-primary/90"
+                    >
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      </details>
 
       {verification?.status === "failed" && verification.failureReason ? (
         <p className="text-xs text-destructive" role="alert">
