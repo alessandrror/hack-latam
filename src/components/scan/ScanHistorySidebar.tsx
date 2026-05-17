@@ -1,191 +1,101 @@
 "use client";
 
-import { anyApi } from "convex/server";
-import { useQuery } from "convex/react";
-import type { GenericId } from "convex/values";
-import type { AiInsightsResponseBody } from "@/types/ai-insights";
-import type { ScanFinding, ScanResponseBody } from "@/types/scan";
-
-import { useEffect, type Dispatch, type SetStateAction } from "react";
-import { X, History } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { History, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-export type ScanHistoryDoc = {
-  _id: GenericId<"scans">;
-  _creationTime: number;
-  target: string;
-  normalizedTarget: string;
-  inputKind: ScanResponseBody["inputKind"];
-  scanMode: "quick" | "deep";
-  findings: ScanFinding[];
-  modules: ScanResponseBody["modules"];
-  aiInsights?: AiInsightsResponseBody | null;
-  createdAt: number;
-};
+import { cn } from "@/lib/utils";
+import {
+  formatHistoryRelativeEs,
+  type ScanSessionHistoryEntry,
+} from "@/lib/scan/scanSessionHistory";
 
 type ScanHistorySidebarProps = {
-  open: boolean;
-  setOpen: Dispatch<SetStateAction<boolean>>;
-  onRestoreScan: (
-    payload: ScanResponseBody,
-    options: {
-      convexScanId: GenericId<"scans">;
-      aiInsights: AiInsightsResponseBody | null;
-    },
-  ) => void;
+  entries: ScanSessionHistoryEntry[];
+  selectedId: string | null;
+  onSelect: (entry: ScanSessionHistoryEntry) => void;
+  onNewScan: () => void;
+  newScanDisabled: boolean;
 };
 
-function formatAgeEs(createdAt: number): string {
-  const delta = Math.max(0, Date.now() - createdAt);
-  const mins = Math.floor(delta / 60_000);
-  if (mins < 1) return "justo ahora";
-  if (mins < 60) return `hace ${mins} min`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 48) return `hace ${hrs} h`;
-  const days = Math.floor(hrs / 24);
-  return `hace ${days} d`;
-}
-
 export function ScanHistorySidebar({
-  open,
-  setOpen,
-  onRestoreScan,
+  entries,
+  selectedId,
+  onSelect,
+  onNewScan,
+  newScanDisabled,
 }: ScanHistorySidebarProps) {
-  const scans = useQuery(anyApi.scans.getUserScans, {});
-
-  useEffect(() => {
-    if (!open) return;
-    function onEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    window.addEventListener("keydown", onEscape);
-    return () => window.removeEventListener("keydown", onEscape);
-  }, [open, setOpen]);
-
   return (
-    <>
-      {open ? (
-        <button
+    <div className="flex flex-col gap-6">
+      <div className="space-y-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Acciones
+        </p>
+        <Button
           type="button"
-          aria-label="Cerrar panel de historial"
-          className="fixed inset-0 z-[48] cursor-pointer bg-black/55 backdrop-blur-[2px]"
-          onClick={() => setOpen(false)}
-        />
-      ) : null}
+          variant="default"
+          size="default"
+          className="w-full gap-2 rounded-md shadow-none"
+          disabled={newScanDisabled}
+          onClick={onNewScan}
+        >
+          <Plus className="size-4 shrink-0" aria-hidden />
+          Nuevo escaneo
+        </Button>
+        {newScanDisabled ? (
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Define objetivo y modo en el panel principal para lanzar un escaneo.
+          </p>
+        ) : null}
+      </div>
 
-      <aside
-        id="scan-history-panel"
-        aria-hidden={!open}
-        className={`fixed inset-y-0 right-0 z-[50] w-[min(20rem,calc(100vw-3rem))] border-l border-border bg-card shadow-lg transition-transform duration-200 ease-out ${open ? "translate-x-0" : "translate-x-full"}`}
-      >
-        <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-4">
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Historial de escaneos
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Convex en servidor; el guardado tras cada consulta debe enlazarse
-                desde la app para ver filas nuevas aquí.
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shrink-0 gap-1.5 px-3 py-2 text-xs font-medium"
-              onClick={() => setOpen(false)}
-              aria-label="Cerrar historial"
-            >
-              <X className="size-3.5 shrink-0 opacity-90" aria-hidden />
-              Cerrar
-            </Button>
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-            {!scans ? (
-              <p className="px-2 py-4 text-xs text-slate-500">Cargando…</p>
-            ) : scans.length === 0 ? (
-              <p className="px-2 py-4 text-xs text-slate-500">
-                Tus escaneos aparecerán aquí cuando ejecutes uno con la sesión
-                iniciada.
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-2 pb-24">
-                {scans.map((row: ScanHistoryDoc) => {
-                  const nf =
-                    Array.isArray(row.findings) && row.findings.length > 0
-                      ? row.findings.length
-                      : 0;
-                  return (
-                    <li key={String(row._id)}>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() =>
-                          onRestoreScan(
-                            {
-                              target: row.target,
-                              normalizedTarget: row.normalizedTarget,
-                              inputKind: row.inputKind,
-                              findings:
-                                (row.findings as ScanFinding[]) ?? [],
-                              modules: row.modules ?? [],
-                              mode: row.scanMode,
-                            },
-                            {
-                              convexScanId: row._id,
-                              aiInsights:
-                                row.aiInsights && typeof row.aiInsights === "object"
-                                  ? (row.aiInsights as AiInsightsResponseBody)
-                                  : null,
-                            },
-                          )
-                        }
-                        className="h-auto min-h-0 w-full flex-col items-start gap-2 rounded-xl border-border bg-muted/30 px-3 py-3 text-left hover:bg-muted"
-                      >
-                        <div className="flex w-full items-start justify-between gap-2">
-                          <span className="min-w-0 font-mono text-xs font-medium text-foreground break-all">
-                            {row.normalizedTarget || row.target}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className={
-                              row.scanMode === "deep"
-                                ? "border-primary/25 bg-primary/5 text-[10px] font-bold text-primary"
-                                : "border-accent/25 bg-accent/10 text-[10px] font-bold text-accent"
-                            }
-                          >
-                            {row.scanMode === "deep" ? "Profundo" : "Rápido"}
-                          </Badge>
-                        </div>
-                        <p className="mt-2 flex w-full items-center justify-between text-[11px] text-slate-500">
-                          <span>{nf} hallazgos</span>
-                          <span>{formatAgeEs(row.createdAt)}</span>
-                        </p>
-                      </Button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        </div>
-      </aside>
-
-      <Button
-        type="button"
-        variant="outline"
-        size="lg"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-controls="scan-history-panel"
-        className="fixed bottom-6 right-4 z-[55] gap-2 rounded-xl border-border bg-card px-4 py-2.5 font-semibold text-foreground shadow-md hover:bg-muted sm:right-8"
-      >
-        <History className="size-4 shrink-0 opacity-80" aria-hidden />
-        {open ? "Ocultar" : "Historial"}
-      </Button>
-    </>
+      <div className="space-y-3 border-t border-border/40 pt-5">
+        <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <History className="size-3.5" aria-hidden />
+          Historial (esta sesión)
+        </p>
+        {entries.length === 0 ? (
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Aún no hay escaneos en esta sesión. Los completados aparecerán aquí para
+            volver a ellos al instante.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-1.5" role="list">
+            {entries.map((entry) => {
+              const label =
+                entry.result.normalizedTarget?.trim() ||
+                entry.inputTarget.trim() ||
+                "—";
+              const isActive = selectedId === entry.id;
+              return (
+                <li key={entry.id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(entry)}
+                    className={cn(
+                      "flex w-full flex-col gap-0.5 rounded-md border px-3 py-2.5 text-left text-sm transition-colors duration-150",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                      isActive
+                        ? "border-primary/35 bg-primary/10 text-foreground"
+                        : "border-border/50 bg-muted/20 text-foreground hover:bg-muted/40",
+                    )}
+                  >
+                    <span className="truncate font-mono text-xs font-medium">
+                      {label}
+                    </span>
+                    <span className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                      <span className="rounded border border-border/60 bg-background/60 px-1.5 py-px font-medium uppercase tracking-wide">
+                        {entry.mode === "deep" ? "Profundo" : "Rápido"}
+                      </span>
+                      <span className="tabular-nums">
+                        {formatHistoryRelativeEs(entry.savedAt)}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
+import { History } from "lucide-react";
 import { AiInsightsColumn } from "@/components/dashboard/AiInsightsColumn";
 import { AllFindingsPanel } from "@/components/dashboard/AllFindingsPanel";
 import { AssetsColumn } from "@/components/dashboard/AssetsColumn";
@@ -9,14 +10,36 @@ import { RiskColumn } from "@/components/dashboard/RiskColumn";
 import { ScanOverviewPanel } from "@/components/dashboard/ScanOverviewPanel";
 import { SkeletonGrid } from "@/components/dashboard/SkeletonGrid";
 import { clearChatMessages, chatSessionStorageKey } from "@/lib/ai/chat-session-storage";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import { aggregateHostnamesFromFindings } from "@/lib/dashboard/findings";
 import { buildInsightsRequestBody } from "@/lib/dashboard/insights-payload";
+import {
+  appendScanSessionHistoryEntry,
+  loadScanSessionHistory,
+  persistScanSessionHistory,
+  type ScanSessionHistoryEntry,
+} from "@/lib/scan/scanSessionHistory";
 import { cn } from "@/lib/utils";
 import type { AiInsightsResponseBody } from "@/types/ai-insights";
 import type { ScanResponseBody } from "@/types/scan";
-import { useCallback, useMemo, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 
 import { ScanFormPanel, type ScanMode } from "./ScanFormPanel";
+import { ScanHistorySidebar } from "./ScanHistorySidebar";
+import { ScanMainStart } from "./ScanMainEmpty";
 import { ScanTabs, type ScanTabId } from "./ScanTabs";
 
 function isAiInsightsResponseBody(x: unknown): x is AiInsightsResponseBody {
@@ -39,14 +62,24 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
   const { isLoaded: authLoaded, isSignedIn } = useAuth();
   const [target, setTarget] = useState(initialTarget);
   const [scanMode, setScanMode] = useState<ScanMode>("deep");
-  const [activeTab, setActiveTab] = useState<ScanTabId>("scan");
+  const [activeTab, setActiveTab] = useState<ScanTabId>("overview");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ScanResponseBody | null>(null);
-  const [hasScanned, setHasScanned] = useState(false);
   const [aiResult, setAiResult] = useState<AiInsightsResponseBody | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [history, setHistory] = useState<ScanSessionHistoryEntry[]>([]);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setHistory(loadScanSessionHistory());
+    });
+  }, []);
 
   const findingsForGrid = useMemo(
     () => result?.findings ?? [],
@@ -63,13 +96,53 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     setAiLoading(false);
   }, []);
 
-  /** Quick scans hide Checklist; don't render that panel if state is stale. */
   const activeTabResolved: ScanTabId = useMemo(() => {
     if (result?.mode === "quick" && activeTab === "checklist") {
       return "findings";
     }
     return activeTab;
   }, [result?.mode, activeTab]);
+
+  const handleTabChange = useCallback((id: ScanTabId) => {
+    setActiveTab(id);
+    setMobileSidebarOpen(false);
+  }, []);
+
+  const handleNewScan = useCallback(() => {
+    setResult(null);
+    resetAi();
+    setError(null);
+    setActiveTab("overview");
+    setSelectedHistoryId(null);
+    setMobileSidebarOpen(false);
+  }, [resetAi]);
+
+  const handleSelectHistory = useCallback(
+    (entry: ScanSessionHistoryEntry) => {
+      setResult(entry.result);
+      setTarget(entry.inputTarget);
+      setScanMode(entry.mode);
+      resetAi();
+      setError(null);
+      setActiveTab("overview");
+      setSelectedHistoryId(entry.id);
+      setMobileSidebarOpen(false);
+    },
+    [resetAi],
+  );
+
+  const historySidebar = useMemo(
+    () => (
+      <ScanHistorySidebar
+        entries={history}
+        selectedId={selectedHistoryId}
+        onSelect={handleSelectHistory}
+        onNewScan={handleNewScan}
+        newScanDisabled={!result && !loading}
+      />
+    ),
+    [history, selectedHistoryId, handleSelectHistory, handleNewScan, result, loading],
+  );
 
   async function runScan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,7 +158,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
       );
     }
     setLoading(true);
-    setHasScanned(true);
+    setSelectedHistoryId(null);
     try {
       const response = await fetch("/api/scan", {
         method: "POST",
@@ -104,8 +177,23 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
         setError(message);
         return;
       }
-      setResult(body as ScanResponseBody);
+      const scanResult = body as ScanResponseBody;
+      setResult(scanResult);
       setActiveTab("overview");
+      setMobileSidebarOpen(false);
+
+      setHistory((prev) => {
+        const { entries, newId } = appendScanSessionHistoryEntry(prev, {
+          inputTarget: target,
+          mode: scanMode,
+          result: scanResult,
+        });
+        persistScanSessionHistory(entries);
+        queueMicrotask(() => {
+          setSelectedHistoryId(newId);
+        });
+        return entries;
+      });
     } catch {
       setError("Error de red — inténtalo de nuevo.");
     } finally {
@@ -129,39 +217,39 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
       setAiLoading(true);
       setAiError(null);
       try {
-      const response = await fetch("/api/ai/insights", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(scanSnapshot),
-      });
-      const payload: unknown = await response.json();
-      if (!response.ok) {
-        const message =
-          typeof payload === "object" &&
-          payload !== null &&
-          "error" in payload &&
-          typeof (payload as { error: unknown }).error === "string"
-            ? (payload as { error: string }).error
-            : `Error de insights (${response.status}).`;
-        setAiError(message);
-        return;
+        const response = await fetch("/api/ai/insights", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(scanSnapshot),
+        });
+        const payload: unknown = await response.json();
+        if (!response.ok) {
+          const message =
+            typeof payload === "object" &&
+            payload !== null &&
+            "error" in payload &&
+            typeof (payload as { error: unknown }).error === "string"
+              ? (payload as { error: string }).error
+              : `Error de insights (${response.status}).`;
+          setAiError(message);
+          return;
+        }
+        if (!isAiInsightsResponseBody(payload)) {
+          setAiError("Respuesta de IA inválida.");
+          return;
+        }
+        setAiResult(payload);
+        if (opts?.navigateToAi !== false) {
+          setActiveTab("ai");
+        }
+      } catch {
+        setAiError("Error de red — inténtalo de nuevo.");
+      } finally {
+        setAiLoading(false);
       }
-      if (!isAiInsightsResponseBody(payload)) {
-        setAiError("Respuesta de IA inválida.");
-        return;
-      }
-      setAiResult(payload);
-      if (opts?.navigateToAi !== false) {
-        setActiveTab("ai");
-      }
-    } catch {
-      setAiError("Error de red — inténtalo de nuevo.");
-    } finally {
-      setAiLoading(false);
-    }
-  },
-  [loading, result, scanSnapshot],
-);
+    },
+    [loading, result, scanSnapshot],
+  );
 
   const handleFindingCitationClick = useCallback((findingId: string) => {
     setActiveTab("findings");
@@ -181,136 +269,206 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
   const moduleRows = result?.modules ?? [];
   const perFindingMap = aiResult?.perFindingInsightsById ?? null;
   const checklistRowMap = aiResult?.checklistRowInsightsById ?? null;
-  const showResults = hasScanned && !loading && result;
-  /** Pre-scan: focused hero form. After first submit, show dashboard tabs. */
-  const showScanTabs = hasScanned || loading;
+  const showResults = Boolean(result) && !loading;
+  const showChecklistTab = !result || result.mode !== "quick";
+  const resolvedResult = result;
+  const showForm = !result && !loading;
 
-  return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-      {showScanTabs ? (
-        <ScanTabs
-          active={activeTabResolved}
-          onChange={setActiveTab}
-          disabled={loading}
-          hasResults={Boolean(result)}
-          showChecklistTab={!result || result.mode !== "quick"}
+  const resultsPanel: ReactNode = (() => {
+    if (!showResults || !resolvedResult) return null;
+
+    if (activeTabResolved === "overview") {
+      return (
+        <ScanOverviewPanel
+          normalizedTarget={displayTarget}
+          findings={findingsForGrid}
+          modules={moduleRows}
+          totalHostnames={hostAggregate.total}
+          aiResult={aiResult}
+          aiLoading={aiLoading}
+          aiDisabled={loading}
+          onGenerateInsights={() =>
+            void generateInsights({ navigateToAi: false })
+          }
+          onGoToFindingsTab={() => setActiveTab("findings")}
+          showChecklistDeepDive={resolvedResult.mode !== "quick"}
         />
-      ) : null}
+      );
+    }
 
-      <div
-        className={cn(showScanTabs && "mt-8")}
-        role="tabpanel"
-      >
-        {activeTabResolved === "scan" ? (
-          <div
-            className={cn(
-              "transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none",
-              !showScanTabs &&
-                "flex min-h-[60vh] flex-col justify-center motion-reduce:transform-none",
-            )}
-          >
-            <ScanFormPanel
-              target={target}
-              onTargetChange={setTarget}
-              scanMode={scanMode}
-              onScanModeChange={setScanMode}
-              onSubmit={runScan}
-              loading={loading}
-              error={error}
-              authLoaded={authLoaded}
-              isAuthenticated={Boolean(isSignedIn)}
-            />
-            {loading ? (
-              <div className="mt-8">
-                <SkeletonGrid />
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-        {loading && activeTabResolved !== "scan" ? (
-          <div className="space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-accent">
-              Ejecutando comprobaciones pasivas
-            </p>
-            <p className="font-mono text-sm font-medium text-foreground break-all">
-              {displayTarget || target.trim() || "—"}
-            </p>
-            <SkeletonGrid />
-          </div>
-        ) : null}
+    if (activeTabResolved === "assets") {
+      return (
+        <AssetsColumn
+          displayTarget={displayTarget}
+          normalizedTarget={resolvedResult.normalizedTarget}
+          inputKind={resolvedResult.inputKind}
+          modules={moduleRows}
+          hostnames={hostAggregate.hostnames}
+          totalHostnames={hostAggregate.total}
+        />
+      );
+    }
 
-        {activeTabResolved === "overview" && showResults ? (
-          <ScanOverviewPanel
-            normalizedTarget={displayTarget}
+    if (activeTabResolved === "findings") {
+      return (
+        <div className="space-y-8 px-5 py-10 sm:px-8 lg:space-y-10 lg:px-12 lg:py-14">
+          <RiskColumn
             findings={findingsForGrid}
-            modules={moduleRows}
-            totalHostnames={hostAggregate.total}
-            aiResult={aiResult}
-            aiLoading={aiLoading}
-            aiDisabled={loading}
-            onGenerateInsights={() =>
-              void generateInsights({ navigateToAi: false })
-            }
-            onGoToFindingsTab={() => setActiveTab("findings")}
-            showChecklistDeepDive={result.mode !== "quick"}
-          />
-        ) : null}
-
-        {activeTabResolved === "assets" && showResults ? (
-          <AssetsColumn
-            displayTarget={displayTarget}
-            normalizedTarget={result.normalizedTarget}
-            inputKind={result.inputKind}
-            modules={moduleRows}
-            hostnames={hostAggregate.hostnames}
-            totalHostnames={hostAggregate.total}
-          />
-        ) : null}
-
-        {activeTabResolved === "findings" && showResults ? (
-          <div className="space-y-8">
-            <RiskColumn
-              findings={findingsForGrid}
-              perFindingInsightsById={perFindingMap}
-            />
-            <AllFindingsPanel
-              findings={findingsForGrid}
-              perFindingInsightsById={perFindingMap}
-            />
-          </div>
-        ) : null}
-
-        {activeTabResolved === "checklist" && showResults ? (
-          <ChecklistColumn
-            findings={findingsForGrid}
-            checklistRowInsightsById={checklistRowMap}
             perFindingInsightsById={perFindingMap}
           />
-        ) : null}
-
-        {activeTabResolved === "ai" && showResults ? (
-          <AiInsightsColumn
-            loading={aiLoading}
-            error={aiError}
-            result={aiResult}
-            disabled={loading}
-            onGenerate={(opts) =>
-              void generateInsights({ ...opts, navigateToAi: true })
-            }
-            scanSnapshot={scanSnapshot}
-            isSignedIn={Boolean(isSignedIn)}
-            authLoaded={authLoaded}
-            onFindingCitationClick={handleFindingCitationClick}
+          <AllFindingsPanel
+            findings={findingsForGrid}
+            perFindingInsightsById={perFindingMap}
           />
-        ) : null}
+        </div>
+      );
+    }
 
-        {activeTabResolved !== "scan" && !loading && hasScanned && !result ? (
-          <p className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-sm">
-            El escaneo no devolvió resultados. Vuelve a la pestaña Escaneo o
-            revisa el error.
+    if (activeTabResolved === "checklist") {
+      return (
+        <ChecklistColumn
+          findings={findingsForGrid}
+          checklistRowInsightsById={checklistRowMap}
+          perFindingInsightsById={perFindingMap}
+        />
+      );
+    }
+
+    if (activeTabResolved === "ai") {
+      return (
+        <AiInsightsColumn
+          loading={aiLoading}
+          error={aiError}
+          result={aiResult}
+          disabled={loading}
+          onGenerate={(opts) =>
+            void generateInsights({ ...opts, navigateToAi: true })
+          }
+          scanSnapshot={scanSnapshot}
+          isSignedIn={Boolean(isSignedIn)}
+          authLoaded={authLoaded}
+          onFindingCitationClick={handleFindingCitationClick}
+        />
+      );
+    }
+
+    return null;
+  })();
+
+  const mainBody: ReactNode = (() => {
+    if (loading) {
+      return (
+        <div className="space-y-4 px-4 py-8 sm:px-6 lg:px-8">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Ejecutando comprobaciones pasivas
           </p>
-        ) : null}
+          <p className="font-mono text-sm font-medium break-all text-foreground">
+            {displayTarget || target.trim() || "—"}
+          </p>
+          <SkeletonGrid />
+        </div>
+      );
+    }
+
+    if (showForm) {
+      return (
+        <ScanMainStart>
+          <ScanFormPanel
+            target={target}
+            onTargetChange={setTarget}
+            scanMode={scanMode}
+            onScanModeChange={setScanMode}
+            onSubmit={runScan}
+            loading={loading}
+            error={error}
+            authLoaded={authLoaded}
+            isAuthenticated={Boolean(isSignedIn)}
+          />
+        </ScanMainStart>
+      );
+    }
+
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div
+          className={cn(
+            "sticky top-0 z-10 border-b border-border/40 bg-background/90 px-4 py-3 backdrop-blur-md",
+            "sm:px-6 lg:px-8",
+          )}
+        >
+          <ScanTabs
+            active={activeTabResolved}
+            onChange={handleTabChange}
+            disabled={loading}
+            hasResults={Boolean(result)}
+            showChecklistTab={showChecklistTab}
+          />
+        </div>
+        <div className="min-h-0 flex-1">{resultsPanel}</div>
       </div>
-    </div>
+    );
+  })();
+
+  return (
+    <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+      <div className="flex min-h-0 w-full flex-1 flex-col">
+        <div className="flex shrink-0 items-center border-b border-border/40 px-3 py-2 lg:hidden">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-expanded={mobileSidebarOpen}
+            aria-controls="scan-mobile-history"
+            className="gap-2 touch-manipulation rounded-full border-border/50 bg-muted/25 shadow-none"
+            onClick={() => setMobileSidebarOpen(true)}
+          >
+            <History className="size-4" aria-hidden />
+            Historial
+          </Button>
+        </div>
+
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row",
+          )}
+        >
+          <aside
+            className={cn(
+              "hidden w-72 shrink-0 flex-col border-border/50 bg-muted/20 dark:bg-muted/10 lg:flex",
+              "lg:min-h-0 lg:border-r lg:overflow-y-auto",
+            )}
+            aria-label="Historial de escaneos de esta sesión"
+          >
+            <div className="flex flex-col px-4 py-5 lg:px-5 lg:py-6">
+              {historySidebar}
+            </div>
+          </aside>
+
+          <section
+            className={cn(
+              "flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-background",
+            )}
+            aria-label="Vista principal del escaneo"
+          >
+            {mainBody}
+          </section>
+        </div>
+      </div>
+
+      <SheetContent
+        side="left"
+        showCloseButton
+        className="flex w-[min(100vw-1rem,20rem)] max-w-none flex-col gap-6 border-border/40 bg-popover px-5 py-8 shadow-none sm:w-80 md:max-w-[20rem]"
+        id="scan-mobile-history"
+        aria-labelledby="scan-sheet-title"
+      >
+        <SheetHeader className="gap-2 border-b border-border/40 p-0 pb-4 text-left">
+          <SheetTitle id="scan-sheet-title" className="text-base">
+            Historial de esta sesión
+          </SheetTitle>
+        </SheetHeader>
+        {historySidebar}
+      </SheetContent>
+    </Sheet>
   );
 }

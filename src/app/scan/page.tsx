@@ -1,5 +1,5 @@
+import { ScanAppChrome } from "@/components/scan/ScanAppChrome";
 import { ScanWorkspace } from "@/components/scan/ScanWorkspace";
-import { SiteHeader } from "@/components/ui/SiteHeader";
 
 export const metadata = {
   title: "Analizar dominio — Hack LATAM",
@@ -21,9 +21,9 @@ export default async function ScanPage({ searchParams }: PageProps) {
         ? String(raw[0]).trim().slice(0, 256)
         : "";
   return (
-    <div className="min-h-dvh bg-background">
-      <SiteHeader />
-      <main className="min-h-[calc(100dvh-4rem)]">
+    <div className="flex min-h-dvh flex-col bg-background">
+      <ScanAppChrome />
+      <main className="flex min-h-0 flex-1 flex-col">
         <ScanWorkspace
           key={initialTarget === "" ? "no-target" : initialTarget}
           initialTarget={initialTarget}
