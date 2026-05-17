@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 export const metadata = {
   title: "Blog — Hack LATAM",
   description:
-    "Patrones típicos en escaneos pasivos defensivos y pasos prácticos para PYMEs (sin jargon innecesario).",
+    "Guías prácticas sobre errores públicos repetidos SPF/DMARC y HTTPS observable — mismo enfoque defensivo y sin pretender vigilancia ante atacantes en vivo.",
 };
 
 export default function BlogPage() {

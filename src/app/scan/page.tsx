@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/ui/SiteHeader";
 export const metadata = {
   title: "Analizar dominio — Hack LATAM",
   description:
-    "Comprobaciones pasivas sobre tu huella externa en un solo resultado: DNS de correo, HTTPS y datos públicos. Solo activos que puedas escanear con autorización.",
+    "Genera un instantáneo pasivo después de definir modo y objetivo autorizado: correo en DNS público y HTTPS observable; modo profundo añade detalle SPF/DMARC, TLS heredados, registros CAA y huella vía CT. No es tiempo real ni vigilancia de intrusos.",
 };
 
 type PageProps = {

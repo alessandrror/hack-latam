@@ -65,7 +65,7 @@ export function AllFindingsPanel({
       <Card className="border border-border shadow-sm">
         <CardContent className="p-6">
           <p className="text-sm text-muted-foreground">
-            Sin hallazgos en esta pasada. Revisa activos y checklist.
+            Sin hallazgos en esta ejecución instantánea. Revisa huella observable y checklist si aún no lo hiciste.
           </p>
         </CardContent>
       </Card>

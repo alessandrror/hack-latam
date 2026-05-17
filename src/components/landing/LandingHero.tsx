@@ -16,19 +16,21 @@ export function LandingHero() {
           variant="outline"
           className="inline-flex rounded-full border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-primary shadow-none"
         >
-          Defensa · Superficie observable
+          Superficie externa pasiva · PYME
         </Badge>
         <h1
           id="landing-hero-heading"
           className="mt-8 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-[clamp(2.25rem,6vw,3.75rem)] lg:leading-[1.08]"
         >
-          Visibilidad sobre lo que{" "}
-          <span className="text-primary">Internet ya muestra</span> sobre tu dominio
+          ¿Qué se ve ya{" "}
+          <span className="text-primary">en público</span> sobre tu dominio?
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-          Comprobaciones pasivas y determinístas: huella en transparencia de
-          certificados, SPF/DMARC/DKIM y certificado HTTPS en :443. La IA solo
-          ayuda a priorizar verificación — no sustituye tu criterio.
+          Te damos un instantáneo de señales que cualquier observador externo también
+          puede revisar — correo (SPF/DMARC/DKIM), HTTPS en :443 y, en modo profundo,
+          huella por transparencia de certificados. Sin explotación, sin pentest
+          automatizado ni promesa de cobertura total. Opcionalmente, la IA sugiere qué
+          validar después; las comprobaciones estructuradas son la fuente principal.
         </p>
       </div>
 
@@ -42,7 +44,7 @@ export function LandingHero() {
             "inline-flex min-h-11 min-w-[44px] items-center justify-center rounded-xl border-border px-6 text-sm font-medium text-foreground hover:bg-muted",
           )}
         >
-          Abrir panel completo
+          Ir al panel de escaneo
         </Link>
         <Link
           href="#funcionalidades"
@@ -51,7 +53,7 @@ export function LandingHero() {
             "inline-flex min-h-11 min-w-[44px] items-center justify-center rounded-xl text-muted-foreground hover:text-foreground",
           )}
         >
-          Cómo funciona
+          Qué chequeamos hoy
         </Link>
       </div>
     </section>

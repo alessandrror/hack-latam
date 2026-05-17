@@ -246,7 +246,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
         {loading && activeTabResolved !== "scan" ? (
           <div className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-accent">
-              Analizando (pasivo)
+              Ejecutando comprobaciones pasivas
             </p>
             <p className="font-mono text-sm font-medium text-foreground break-all">
               {displayTarget || target.trim() || "—"}

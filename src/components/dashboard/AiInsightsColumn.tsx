@@ -57,7 +57,7 @@ function priorityTone(p: AiInsightsTopAction["priority"]): string {
 }
 
 const DEFAULT_PANEL_DISCLAIMER =
-  "El texto de IA es orientativo. Estas comprobaciones son pasivas e incompletas — verifica los hallazgos en tu entorno.";
+  "La IA ofrece texto de apoyo a partir de hallazgos ya medidos aquí: no ejecuta cambios ni garantiza seguridad futura ni sustituye una revisión técnica completa.";
 
 export type AiInsightsColumnProps = {
   loading: boolean;
@@ -77,16 +77,15 @@ export function AiInsightsColumn({
   onGenerate,
 }: AiInsightsColumnProps) {
   return (
-    <Card className="gap-0 border border-border py-4 shadow-sm" aria-label="Insights con IA">
+    <Card className="gap-0 border border-border py-4 shadow-sm" aria-label="Orientación con IA desde hallazgos">
       <CardContent className="flex flex-col gap-4 p-4 px-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Insights con IA
+            Orientación IA (persona siempre primero)
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Resumen de remediación bajo demanda; no sustituye verificación técnica
-            interna.
+            La IA solo reorganiza tus hallazgos en pasos verificables; tú ejecutas cambios después de revisar política técnica.
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-start">
@@ -99,7 +98,7 @@ export function AiInsightsColumn({
             size="lg"
             className="min-h-11 cursor-pointer rounded-lg px-4 py-2 text-sm"
           >
-            {loading ? "Generando…" : result ? "Actualizar resultado" : "Generar"}
+            {loading ? "Generando…" : result ? "Regenerar orientación IA" : "Generar orientación desde hallazgos"}
           </Button>
           {result ? (
             <Button

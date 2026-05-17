@@ -11,57 +11,57 @@ export type Feature = {
 export const FEATURES: Feature[] = [
   {
     id: "subdomain_enum",
-    title: "Huellas públicas (transparencia de certificados)",
+    title: "Huella observable (transparencia de certificados)",
     description:
-      "Lista hostnames aparecidos en logs públicos CT (crt.sh) — visibilidad, no garantía de inventario.",
+      "Hostnames aparecidos en registros públicos CT (crt.sh): contexto típico, no inventario completo.",
     status: "live",
     icon: "radar",
   },
   {
     id: "dns_health",
-    title: "Salud de correo (SPF / DMARC / DKIM)",
+    title: "Postura de correo (SPF / DMARC / DKIM)",
     description:
-      "Detecta configuraciones débiles de autenticación de email que facilitan phishing.",
+      "Señala huecos típicos en autenticación de email que aumentan el riesgo de suplantación (phishing), según registros públicos.",
     status: "live",
     icon: "dns",
   },
   {
     id: "tls_check",
-    title: "Inspección TLS en :443",
+    title: "HTTPS en puerto :443",
     description:
-      "Lee el certificado HTTPS del dominio en :443: vencimiento, emisor y coincidencia de nombres.",
+      "Certificado público observado desde fuera: vigencia, emisor y coherencia con el nombre esperado.",
     status: "live",
     icon: "lock",
   },
   {
     id: "ai_insights",
-    title: "Insights con IA",
+    title: "Orientación IA (opcional)",
     description:
-      "Resumen ejecutivo y pasos para verificar o remediar, con advertencias claras sobre límites del escaneo.",
+      "Ordena y explica tus hallazgos con pasos de verificación que tú validas antes de cualquier cambio.",
     status: "live",
     icon: "ai",
   },
   {
     id: "shodan_ports",
-    title: "Servicios expuestos",
+    title: "Resumen de superficie desde OSINT",
     description:
-      "Puertos y servicios visibles desde fuentes OSINT (Shodan) — próximamente.",
+      "Visión contextual desde fuentes OSINT públicas tipo Shodan (roadmap) — siempre dentro de uso autorizado.",
     status: "soon",
     icon: "ports",
   },
   {
     id: "hibp",
-    title: "Credenciales filtradas",
+    title: "Exposiciones conocidas por brechas",
     description:
-      "Cruza emails corporativos con bases de brechas conocidas (HIBP) — próximamente.",
+      "Cruce respetando ToS (HIBP u homólogo) cuando esté disponible como señal defensiva adicional.",
     status: "soon",
     icon: "breach",
   },
   {
     id: "streaming",
-    title: "Escaneo en streaming",
+    title: "Progresión de resultado en tiempo del escaneo",
     description:
-      "Resultados parciales en vivo vía SSE mientras los módulos terminan — próximamente.",
+      "Mostrar cómo van cerrando los módulos cuando la UI lo soporte — no vigilancia ante amenazas en vivo.",
     status: "soon",
     icon: "stream",
   },

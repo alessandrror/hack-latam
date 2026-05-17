@@ -27,15 +27,15 @@ export function NewsletterCTA({ id = "newsletter" }: { id?: string }) {
       <CardContent className="px-6 py-10 sm:px-10">
         <div className="text-center">
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-foreground/80">
-            Newsletter semanal
+            Boletín
           </p>
           <h2 className="mt-3 text-2xl font-bold text-foreground sm:text-3xl">
-            Resiliencia práctica cada semana
+            Un plan defensivo en lenguaje claro
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-            Alertas sobre parches, patrones típicos de configuración débil en
-            dominios públicos y pasos útiles para equipos PYME sin CISO —
-            comunidad Hack LATAM.
+            Píldoras sobre errores públicos repetidos SPF/DMARC, HTTPS y huella observable,
+            con pasos concretos para equipos PYME sin CISO permanente — sin prometer SOC
+            ni cobertura completa en la bandeja de entrada.
           </p>
         </div>
         {sent ? (
@@ -43,7 +43,7 @@ export function NewsletterCTA({ id = "newsletter" }: { id?: string }) {
             className="mt-6 text-center text-sm font-medium text-accent"
             role="status"
           >
-            Gracias. Te avisaremos cuando el envío semanal esté activo.
+            Gracias. Te avisaremos cuando los envíos estén activos.
           </p>
         ) : (
           <form
@@ -66,7 +66,7 @@ export function NewsletterCTA({ id = "newsletter" }: { id?: string }) {
               type="submit"
               className="min-h-12 shrink-0 rounded-xl px-6 text-sm"
             >
-              Unirme →
+              Quiero los resúmenes
             </Button>
           </form>
         )}

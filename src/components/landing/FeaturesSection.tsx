@@ -9,14 +9,13 @@ export function FeaturesSection() {
     <section id="funcionalidades" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
       <div className="text-center">
         <p className="text-sm font-bold uppercase tracking-[0.18em] text-foreground/80">
-          Plataforma
+          Pipeline determinístico
         </p>
         <h2 className="mt-3 text-3xl font-bold text-foreground">
-          Funcionalidades actuales y roadmap
+          Lo que ejecuta el servidor hoy — y próximos refuerzos
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground">
-          Comprobaciones defensivas que ya ejecuta el servidor (sin ataques ni
-          explotación) y lo que sigue en el roadmap del hackathon.
+          Cada módulo revisa algo medible desde fuera, sin lanzar exploits. La IA aparece después y solo ordena ayuda cuando tú la pides — no definimos seguridad únicamente desde un chat.
         </p>
       </div>
       <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -39,7 +38,7 @@ export function FeaturesSection() {
                         : "border-border bg-secondary text-secondary-foreground hover:bg-secondary",
                     )}
                   >
-                    {feature.status === "live" ? "Activo" : "Próximo"}
+                    {feature.status === "live" ? "En producción" : "En roadmap"}
                   </Badge>
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-foreground">

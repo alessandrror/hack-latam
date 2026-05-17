@@ -69,7 +69,7 @@ export function ScanOverviewPanel({
     <div className="space-y-8">
       <div className="rounded-2xl border border-border bg-card/60 px-5 py-4 shadow-sm backdrop-blur-sm">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Objetivo analizado
+          Objetivo escaneado
         </p>
         <p className="mt-1 font-mono text-sm font-medium text-foreground break-all">
           {normalizedTarget || "—"}
@@ -81,13 +81,13 @@ export function ScanOverviewPanel({
           <Card className="border-border bg-card shadow-sm">
             <CardContent className="flex flex-col gap-1 p-4">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Hostnames públicos (CT / agregado)
+                Hostnames (huella observable)
               </span>
               <span className="font-mono text-3xl font-semibold tabular-nums text-foreground">
                 {totalHostnames}
               </span>
               <span className="text-xs text-muted-foreground">
-                Volumen orientativo de huella observable
+                Indicador orientativo tras CT/agregaciones; no garantiza inventario completo.
               </span>
             </CardContent>
           </Card>
@@ -141,10 +141,10 @@ export function ScanOverviewPanel({
 
       {low > 0 ? (
         <p className="text-xs text-muted-foreground">
-          Hallazgos de nivel bajo en esta pasada:{" "}
+          Hallazgos de severidad «baja» en esta ejecución:{" "}
           <span className="font-mono font-medium text-foreground">{low}</span>
           {" "}
-          (en modo rápido puede no mostrarse la lista completa).
+          (en modo rápido algunos pueden no llegar en la respuesta.)
         </p>
       ) : null}
 
@@ -153,11 +153,11 @@ export function ScanOverviewPanel({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Prioridades inmediatas
+                Lo que típicamente atenderías primero
               </h2>
               <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-                Extracto de hallazgos críticos y medios. Usa «Hallazgos» para el
-                detalle completo.
+                Extracción instantánea de hallazgos críticos y medios. La pestaña
+                «Hallazgos» muestra texto completo, metadatos y contexto técnico.
               </p>
             </div>
             <Button
@@ -166,13 +166,13 @@ export function ScanOverviewPanel({
               className="min-h-11 min-w-[44px] shrink-0"
               onClick={onGoToFindingsTab}
             >
-              Ver todos los hallazgos
+              Ver detalle completo de hallazgos
             </Button>
           </div>
 
           {topRisks.length === 0 ? (
             <p className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-              Sin hallazgos críticos ni medios en esta pasada.
+              Sin hallazgos críticos ni medios en esta ejecución del instantáneo.
             </p>
           ) : (
             <ul className="space-y-3" role="list">
@@ -211,11 +211,11 @@ export function ScanOverviewPanel({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                IA — resumen ejecutivo
+                IA opcional sobre tus hallazgos
               </h2>
               <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-                Generación bajo demanda para priorizar verificación y remediación. No
-                reemplaza auditoría técnica.
+                Genera texto bajo demanda para ordenar siguiente pasos y recordar límites
+                — no automatiza remediation ni decide por ti ni sustituye auditoría técnica.
               </p>
             </div>
             <Button
@@ -226,26 +226,25 @@ export function ScanOverviewPanel({
               onClick={() => onGenerateInsights()}
             >
               {aiLoading
-                ? "Generando…"
+                ? "Generando texto…"
                 : aiResult
-                  ? "Actualizar IA"
-                  : "Generar resumen IA"}
+                  ? "Volver a generar orientación IA"
+                  : "Generar orientación IA desde hallazgos"}
             </Button>
           </div>
 
           {aiResult && !aiLoading ? (
             <div className="rounded-xl border border-border bg-muted/20 p-4">
               <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Resumen
+                Lectura ejecutiva (IA)
               </h3>
               <p className="mt-2 line-clamp-6 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
                 {aiResult.executiveSummary}
               </p>
               {aiResult.topActions.length > 0 ? (
                 <p className="mt-4 text-xs text-muted-foreground">
-                  {aiResult.topActions.length}{" "}
-                  acción(es) sugerida(s). Abre la pestaña «IA» para pasos completos y
-                  descargos.
+                  {aiResult.topActions.length} acción(es) priorizadas por el modelo —
+                  ves el detalle, descargos y límites en la pestaña «IA».
                 </p>
               ) : null}
             </div>
@@ -253,8 +252,8 @@ export function ScanOverviewPanel({
 
           {!aiResult && !aiLoading ? (
             <p className="rounded-lg border border-dashed border-border bg-muted/20 p-4 text-sm text-muted-foreground">
-              Aún no hay resumen IA. Genera uno para obtener prioridades verificables
-              alineadas a tus hallazgos.
+              Aún no generaste texto IA. Una vez lanzado, te ayuda a ordenar verificación —
+              partiendo siempre de los hallazgos estructurados y siendo explícitos sobre límites.
             </p>
           ) : null}
 

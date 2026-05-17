@@ -43,7 +43,7 @@ export function SiteHeader() {
               Hack LATAM
             </span>
             <span className="text-sm font-medium text-foreground">
-              Superficie externa pasiva
+              Huella observable · solo pasivo
             </span>
           </span>
         </Link>
@@ -69,7 +69,7 @@ export function SiteHeader() {
                   "ml-1 hidden min-h-11 shrink-0 rounded-lg px-4 py-2 sm:inline-flex",
                 )}
               >
-                Analizar dominio
+                Analizar con permiso
               </Link>
             ) : null}
           </nav>

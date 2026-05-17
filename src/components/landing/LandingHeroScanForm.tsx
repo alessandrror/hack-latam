@@ -26,14 +26,14 @@ export function LandingHeroScanForm() {
       onSubmit={onSubmit}
       className="mx-auto mt-12 w-full max-w-2xl space-y-4 text-left"
       noValidate
-      aria-label="Iniciar escaneo desde la página de inicio"
+      aria-label="Iniciar instantáneo de escaneo pasivo desde el inicio"
     >
       <div className="space-y-2">
         <label
           htmlFor={TARGET_ID}
           className="text-sm font-semibold text-foreground"
         >
-          Dominio o URL (solo con autorización)
+          Dominio o URL que puedas analizar con autorización
         </label>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
           <Input
@@ -55,12 +55,13 @@ export function LandingHeroScanForm() {
             className="min-h-12 shrink-0 rounded-xl px-8 text-base font-semibold"
             disabled={!target.trim()}
           >
-            Escanear superficie
+            Comprobar dominio pasivo
           </Button>
         </div>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Te llevamos al panel de escaneo con el objetivo rellenado. Allí podrás elegir
-          modo rápido o profundo según tu cuenta.
+          Pasamos este objetivo al panel; allí eliges modo rápido (prioriza lo urgente)
+          o profundo (todas las comprobaciones pasivas y checklist). Solo destinos sobre
+          los que tienes derecho por ley o acuerdo.
         </p>
       </div>
     </form>

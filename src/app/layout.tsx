@@ -17,9 +17,9 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hack LATAM — Superficie externa pasiva para PYMEs",
+  title: "Hack LATAM — Instantáneo pasivo de huella observable para PYMEs",
   description:
-    "Comprueba en segundos qué se ve en público sobre tu dominio (transparencia de certificados, correo DNS, HTTPS). Sin explotación. Blog y guías orientadas a defensa.",
+    "Cuando eliges modo y ejecutas el escaneo, obtienes un resultado determinístico a partir de señales públicas: correo en DNS (SPF/DMARC/DKIM), HTTPS en :443 y, en modo profundo, huella por transparencia de certificados. Sin explotación ni inventario garantizado; la IA opcional solo orienta sobre los hallazgos.",
 };
 
 export default function RootLayout({

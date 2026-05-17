@@ -49,17 +49,18 @@ export function RiskColumn({
   return (
     <Card className="gap-0 border border-border py-0 shadow-sm">
       <CardContent className="flex flex-col gap-4 p-4">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Riesgos prioritarios
-      </h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Hallazgos críticos y medios que suelen atenderse primero.
-      </p>
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Riesgos que conviene revisar antes
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Hallazgos críticos y medios ordenados igual que aparecen en tus módulos —
+          prioriza verificación práctica dentro de tus ventanas operativas.
+        </p>
 
       {risks.length === 0 ? (
         <p className="mt-4 rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-          Sin hallazgos críticos ni medios en esta pasada. Revisa checklist y lista
-          de hostnames públicos como contexto.
+          Sin hallazgos críticos ni medios en esta ejecución. Para contexto, revisa
+          checklist y lista de huella observable cuando estén disponibles.
         </p>
       ) : (
         <ul className="mt-4 space-y-3">

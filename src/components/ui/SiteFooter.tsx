@@ -7,8 +7,9 @@ export function SiteFooter() {
         <div>
           <p className="text-sm font-semibold text-foreground">Hack LATAM</p>
           <p className="mt-1 max-w-sm text-xs text-foreground/65">
-            Visibilidad defensiva de tu huella externa para PYMEs: solo señales
-            públicas y pasivas; sin explotación ni pentest.
+            Instantáneo pasivo tras enviar dominio autorizado — correo público en DNS,
+            HTTPS observable y huella CT según modo. Sin explotación, sin vigilancia ante
+            atacantes y sin equivalencia a auditoría integral.
           </p>
         </div>
         <nav className="flex flex-wrap gap-4 text-sm font-medium text-foreground/75">
@@ -27,7 +28,7 @@ export function SiteFooter() {
         </nav>
       </div>
       <p className="border-t border-border py-4 text-center text-xs text-foreground/60">
-        © {new Date().getFullYear()} Hack LATAM · hackathon def/acc · resiliencia defensiva
+        © {new Date().getFullYear()} Hack LATAM · proyecto def/acc · resiliencia observable
       </p>
     </footer>
   );

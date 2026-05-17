@@ -42,20 +42,14 @@ export function ScanFormPanel({
   return (
     <div className="mx-auto w-full max-w-2xl text-center">
       <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
-        Revisa tu{" "}
-        <span className="font-semibold text-primary">
-          superficie externa pública
-        </span>
+        Instantáneo sobre tu{" "}
+        <span className="font-semibold text-primary">huella observable</span>
       </h1>
       <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-        Introduce el dominio o URL de propiedades que puedas escanear por
-        ley/política. Solo datos públicos y acuerdos HTTPS normales (puerto{" "}
-        <span className="font-mono">443</span>
-        ) — sin explotación. El modo{" "}
-        <span className="font-semibold text-accent">rápido</span> sirve como
-        comprobación prioritaria; el{" "}
-        <span className="font-semibold text-accent">profundo</span> activa todas
-        las comprobaciones pasivas del servidor y necesita cuenta.
+        Introduce dominio o URL que puedas analizar por ley o acuerdo. Consultamos solo lo que un observador externo también vería mediante DNS y HTTPS (puerto{" "}
+        <span className="font-mono">443</span>). El modo{" "}
+        <span className="font-semibold text-accent">rápido</span> omite parte de la huella por transparencia de certificados y filtra hallazgos de severidad baja para dejarte lo urgente primero; el modo{" "}
+        <span className="font-semibold text-accent">profundo</span> ejecuta los seis módulos pasivos, muestra checklist técnica y requiere iniciar sesión.
       </p>
 
       <form onSubmit={onSubmit} className="mt-10 space-y-6 text-left">
@@ -90,12 +84,12 @@ export function ScanFormPanel({
               {
                 id: "deep" as const,
                 title: "Profundo",
-                desc: "Todos los módulos pasivos y checklist técnico (requiere cuenta).",
+                desc: "Los seis módulos pasivos + checklist técnica (cuenta iniciada).",
               },
               {
                 id: "quick" as const,
                 title: "Rápido",
-                desc: "Omitimos parte de CT y los hallazgos de nivel bajo: prioriza lo urgente.",
+                desc: "Menos cobertura: sin parte de huella CT y sin hallazgos de nivel bajo en la respuesta.",
               },
             ] as const
           ).map((opt) => (
@@ -156,8 +150,7 @@ export function ScanFormPanel({
         </div>
 
         <p className="rounded-lg border border-border bg-muted/40 px-3 py-3 text-xs leading-relaxed text-muted-foreground">
-          Solo analiza dominios de tu empresa o sobre los que tengas autorización
-          por escrito o contrato equivalente.
+          Usa solo objetivos de tu empresa o para los que tengas autorización escrita equivalente — no ejecutamos vigilancia ni detección de intrusión en tiempo real.
         </p>
 
         <Button
@@ -166,7 +159,7 @@ export function ScanFormPanel({
           size="lg"
           className="flex min-h-14 w-full cursor-pointer gap-2 rounded-xl text-base transition active:scale-[0.99] disabled:pointer-events-none disabled:opacity-40"
         >
-          {loading ? "Analizando…" : "Ejecutar análisis pasivo"}
+          {loading ? "Ejecutando módulos…" : "Lanzar comprobaciones pasivas"}
           {!loading ? <span aria-hidden>→</span> : null}
         </Button>
 
@@ -197,10 +190,9 @@ export function ScanFormPanel({
             aria-hidden
           />
           <p className="text-muted-foreground">
-            <span className="font-semibold text-foreground">Tip:</span> Ejemplos como{" "}
-            <span className="font-mono text-foreground">cloudflare.com</span> ayudan
-            a conocer la UI. Si solo tienes IPv4 sin hostname, omitimos huellas CT y
-            parte de TLS esperado por SNI — mejor un nombre de dominio.
+            <span className="font-semibold text-foreground">Nota práctica:</span> dominios públicos grandes (p.&nbsp;ej.{" "}
+            <span className="font-mono text-foreground">cloudflare.com</span>)
+            sirven para probar la interfaz — en producción, escanea siempre tus propios dominios autorizados. Con solo una IP sin nombre, parte de TLS vía SNI puede no comportarse igual que con un hostname claro.
           </p>
         </CardContent>
       </Card>

@@ -13,14 +13,14 @@ export function BlogPreviewSection() {
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-foreground/80">
-            Blog
+            Centro de práctica
           </p>
           <h2 className="mt-3 text-3xl font-bold text-foreground">
-            Fallos típicos y cómo mitigarlos
+            Qué hacer con lo que ya es público
           </h2>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-            Guías cortas ligadas a señales que ya son visibles públicamente cuando
-            miras huella DNS y HTTPS.
+            Artículos breves sobre errores repetidos SPF/DMARC, HTTPS y huella observable:
+            mismo lenguaje directo que en el instantáneo de escaneo.
           </p>
         </div>
         <Link
