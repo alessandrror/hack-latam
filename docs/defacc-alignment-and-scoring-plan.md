@@ -1,146 +1,218 @@
-# Def/Acc Track — Alignment Memo & Scoring Roadmap
+# PRD: Def/Acc Track — Product Hub (alignment, scoring, backlog)
 
-**Purpose.** Single reference for humans and AI agents: how this project fits the hackathon **`def/acc`** (defensive accelerationism) track, what is **implemented vs roadmap**, gaps that hurt demos or judges, and a **prioritized improvement backlog** oriented toward scoring.
+| Field | Value |
+|-------|-------|
+| **Status** | Live (documentation — product backlog items vary) |
+| **Priority** | — (hub document) |
+| **Owner** | Product / Engineering |
+| **Version** | 1.1 |
+| **Last updated** | 2026-05-17 |
 
-**Related docs.** [CONTEXT.md](../CONTEXT.md), [README.md](../README.md), [threat-model.md](threat-model.md), [recon-modules.md](recon-modules.md), [overview.md](overview.md), [AI Insights guided chat PRD](ai-chat-refinement-prd.md).
+**This document is the primary source of truth** for how Hack LATAM fits the hackathon **def/acc** (defensive acceleration) track, what ships today vs roadmap, and how we prioritize work for judges and operators. Satellite docs are linked from [Sub-spec registry](#12-sub-spec-registry).
 
----
-
-## 1. Executive positioning (one paragraph)
-
-Hack LATAM is a **passive external-attack-surface dashboard for SMBs/PYMEs** without dedicated security staff. Users submit a domain or URL; the backend runs **non-exploitative** checks (certificate transparency footprint, DNS email-auth posture, HTTPS certificate and TLS-version signals). Results and optional **AI-generated** remediation summaries are framed for operators, emphasize **authorized use only**, and avoid claiming full coverage or “perfect security.” This is **defensive resilience tooling**, not offensive recon-as-a-product.
-
----
-
-## 2. Track fit assessment (`def/acc`)
-
-| Track theme (conceptual) | Fit | Notes |
-|--------------------------|:---:|-------|
-| **Cybersecurity — protect / detect early / resilient** | **Strong** | CT + SPF/DMARC/DKIM + TLS align with early weakness detection for phishing, cert hygiene, and attack-surface visibility. |
-| **Biosecurity** | — | Out of scope — do not stretch the pitch here. |
-| **Anti-disinformation** | **Partial / adjacent** | **Email-auth** reduces domain spoofing used in phishing and some disinfo; do not oversell unless you add provenance/link safety later. |
-| **Human agency & AI** | **Good** | Findings stay structured; `/api/ai/insights` + [insights-prompt.ts](../src/lib/ai/insights-prompt.ts) constrains outputs to defensive remediation and verification, with completeness disclaimers. |
-| **Not purely “generic AI app”** | **Good if positioned correctly** | Core value is **deterministic scans**; AI is an assist layer. Judges who only see “chat” risk misclassification — demos should **lead with scan modules**. |
-
-**Rough alignment score for judges:** **~8/10** when narration matches implementation (passive, SMB resilience, concrete threat framing). Drops if copy implies real-time intrusion detection or full pen-test equivalence.
+**Also read:** [CONTEXT.md](../CONTEXT.md), [README.md](../README.md).
 
 ---
 
-## 3. Scoring matrix (features → judge criteria)
+## 1. Executive summary (EN)
 
-| What judges often reward | Mapped product evidence |
-|--------------------------|-------------------------|
-| **Concrete threat model** | [threat-model.md](threat-model.md) — trust boundaries, crt.sh/DNS/target :443, abuse/misinterpretation mitigations stated. |
-| **Defensive, not offensive** | [CONTEXT.md](../CONTEXT.md), [ScanFormPanel.tsx](../src/components/scan/ScanFormPanel.tsx) — passive recon wording; `/api/scan` orchestration in [run-scan.ts](../src/lib/recon/run-scan.ts). |
-|**Resilience for institutions / SMBs**| Plain-language `ScanFinding` explanations ([scan.ts](../src/types/scan.ts)); dashboard UX under `src/components/dashboard/`. |
-| **Responsible scope / ethics** | “Authorized targets”; deep scan tied to auth in UI (Clerk); document gaps (no enforced rate limits in API route today). |
-| **Thoughtful AI use** | [insights-prompt.ts](../src/lib/ai/insights-prompt.ts) — JSON-only defensive advisor; OPENROUTER config in [.env.example](../.env.example) only (no secrets in repo). |
+**Hack LATAM** is a **passive external-attack-surface dashboard for SMBs/PYMEs** without dedicated security staff. Users submit a domain or URL; the backend runs **non-exploitative** checks (certificate transparency footprint, DNS email-auth posture, HTTPS certificate and TLS-version signals). Results and optional **AI-generated** remediation summaries are framed for operators, emphasize **authorized use only**, and avoid claiming full coverage or perfect security. Core value is **deterministic scans**; AI is an assist layer. This is **defensive resilience tooling**, not offensive recon-as-a-product.
+
+### Executive summary (ES)
+
+**Hack LATAM** es un **tablero pasivo de superficie de ataque externa para PYMEs** sin equipo de seguridad dedicado. Los usuarios envían un dominio o URL; el backend ejecuta comprobaciones **no explotativas** (huella en transparencia de certificados, postura de autenticación de correo DNS, certificado HTTPS y señales de versión TLS). Los resultados y los resúmenes opcionales **generados por IA** están orientados a operadores, enfatizan **uso solo autorizado** y evitan afirmar cobertura total o “seguridad perfecta”. El núcleo del producto son los **escaneos determinísticos**; la IA es una capa de apoyo. Es **herramienta de resiliencia defensiva**, no recon ofensivo como producto.
 
 ---
 
-## 4. Evidence: what ships today vs roadmap
+## 2. Problem statement
 
-### 4.1 Implemented scan pipeline (`POST /api/scan`)
+- **SMBs** lack continuous, plain-language visibility into **public** misconfigurations that enable phishing (SPF/DMARC), certificate failures, and unnecessary hostname exposure (CT).
+- **Hackathon judges** need a **concrete threat model**, defensive scope, and evidence that the product is not a generic chat wrapper or offensive tooling.
+- **Trust narrative** breaks when copy overclaims (real-time SOC, complete surface) or when **deep** recon is available without **ownership proof** or rate limits.
+
+---
+
+## 3. Goals
+
+| ID | Goal |
+|----|------|
+| G1 | **Detect weaknesses early** using passive, observable signals (CT, DNS email-auth, TLS on :443). |
+| G2 | **Improve resilience** for people and small institutions via prioritized, actionable findings. |
+| G3 | **Stay defensive** — no exploitation, no “hack them” positioning; authorized targets only. |
+| G4 | **Human-in-the-loop AI** — structured findings first; AI explains, prioritizes verification, does not replace judgment ([AI Insights PRD](ai-chat-refinement-prd.md)). |
+| G5 | **Credible def/acc story** — align demos and docs with implementation (lead with modules, not chat). |
+
+---
+
+## 4. Non-goals
+
+- **Biosecurity**, **outbreak/lab** tooling — **out of scope**; do not stretch the pitch.
+- **Real-time intrusion detection**, **SIEM replacement**, **full pen-test** equivalence.
+- **Offensive capabilities** — bulk recon harassment, exploit chains, credential attacks.
+- **Generic “social good”** without **concrete defensive mechanisms** — we anchor scan modules + [threat model](threat-model.md).
+- **Anti-disinformation** as core product — **adjacent only** via email spoofing hygiene unless provenance/link safety ships later.
+
+---
+
+## 5. Track fit matrix (`def/acc`)
+
+Criteria below mirror the official track framing (defensive acceleration: strengthen society’s defenses against cyber, biological, disinformation, and critical-system failures). Columns: **Fit**, **Evidence / stance**, **Scoring impact**.
+
+| Track criterion | Fit | Evidence / stance | Scoring impact |
+|-----------------|-----|-------------------|----------------|
+| **Cybersecurity — protect infrastructure, detect vuln hygiene, improve patching posture** | **Strong** | CT + SPF/DMARC/DKIM + TLS cert/expiry/legacy protocol probes; plain-language remediation hints. | **High** |
+| **Biosecurity** | **—** | Explicitly **out of scope**. | **Low** (neutral if not claimed) |
+| **Anti-disinformation** (provenance, bots, mass persuasion) | **Partial / adjacent** | Email-auth reduces **domain spoofing** used in phishing and some disinfo; **do not oversell** without provenance/link safety. | **Medium** |
+| **Human agency in AI** (supervise systems, stay in the loop) | **Good** | `/api/ai/insights` + [`insights-prompt.ts`](../src/lib/ai/insights-prompt.ts) — JSON-only defensive advisor with disclaimers; guided chat [spec](ai-chat-refinement-prd.md) is **Draft**. | **High** (when demo shows structured-first + verification) |
+| **Disqualifier: generic AI app** | **Good if positioned right** | Deterministic pipeline is the product; AI is assist. | **High** |
+| **Disqualifier: offensive tooling** | **Good** | Passive-only modules; threat model states boundaries. | **High** |
+| **Disqualifier: vague “security” without threat model** | **Mitigated** | [threat-model.md](threat-model.md) + module registry in [run-scan.ts](../src/lib/recon/run-scan.ts). | **High** |
+
+**Rough judge alignment:** **~8/10** when narration matches implementation. **Drops** if copy implies real-time attacker detection, full coverage, or pentest replacement.
+
+---
+
+## 6. Feature status matrix
+
+Rows: product capabilities. **Status:** Implemented / Partial / Draft (spec only) / Not started. **Def/acc:** primary criterion from §5. **Scoring:** High / Med / Low for hackathon narrative.
+
+| Feature | Status | Def/acc criterion | Scoring | Notes / links |
+|---------|--------|---------------------|---------|----------------|
+| **Scan pipeline** (`POST /api/scan`) | **Implemented** | Cybersecurity | **High** | [run-scan.ts](../src/lib/recon/run-scan.ts), [recon-modules.md](recon-modules.md) |
+| **Six modules** (CT, DNS health, TLS, TLS versions, DNS auth details, CAA) | **Implemented** | Cybersecurity | **High** | Quick skips deep-only modules + CT; filters `low` in quick — see §7 |
+| **Quick vs deep mode** | **Implemented** | Cybersecurity | **Med** | UX + API `mode` |
+| **AI one-shot insights** (`POST /api/ai/insights`) | **Implemented** | Human agency / AI | **High** | [route.ts](../src/app/api/ai/insights/route.ts), [insights-prompt.ts](../src/lib/ai/insights-prompt.ts) |
+| **AI guided chat (multi-turn)** | **Draft** | Human agency / AI | **High** (when built) | [ai-chat-refinement-prd.md](ai-chat-refinement-prd.md) — **P3** |
+| **Domain ownership before deep scan** | **Draft** | Cybersecurity + ethics / disqualifiers | **High** | [prd-domain-ownership-verification.md](prd-domain-ownership-verification.md) — **P1** |
+| **Convex scan persistence** (`createScan`, history UI) | **Partial** | Resilience / audit | **Med–High** | [schema.ts](../convex/schema.ts), sidebar absent from workspace — **P2** |
+| **AI insights Convex cache** | **Partial** | Cost / demo polish | **Low–Med** | [aiInsightsCache.ts](../convex/aiInsightsCache.ts) not called from Next route |
+| **Rate limits / abuse controls** | **Not started** | Ethics / disqualifiers | **High** | Open `POST /api/scan` risk — see §10 |
+| **Roadmap modules** (Shodan, SSL Labs-style, HIBP, etc.) | **Not started** | Cybersecurity | **Med** | [recon-modules.md](recon-modules.md) roadmap |
+| **Marketing copy ↔ passive reality** | **Partial** | Disqualifiers | **Med** | Align hero/metadata — Tier A backlog |
+| **API / user docs** (6 modules, quick vs deep) | **Partial** | Credibility | **Med** | [api-reference.md](api-reference.md) reconciled with code |
+
+---
+
+## 7. Technical reference — canonical scan pipeline
 
 **Orchestration:** [run-scan.ts](../src/lib/recon/run-scan.ts) runs modules **in parallel**; per-module failures are isolated.
 
-**Module registry (canonical):**
-
 | Module | When it runs | Role |
 |--------|----------------|------|
-| `subdomain_enum` | Domain + **deep** mode | Hostnames from certificate transparency ([subdomains.ts](../src/lib/recon/subdomains.ts)). **Skipped** in `quick`. |
+| `subdomain_enum` | Domain + **deep** | Hostnames from certificate transparency ([subdomains.ts](../src/lib/recon/subdomains.ts)). **Skipped** in `quick`. |
 | `dns_health` | Domain | SPF / DMARC / common DKIM selector probes ([dns-health.ts](../src/lib/recon/dns-health.ts)). |
 | `tls_check` | Domain | Leaf cert / expiry / name match on **:443** ([tls-check.ts](../src/lib/recon/tls-check.ts)). |
-| `tls_versions_check` | Domain + **deep** | Legacy TLS 1.0/1.1 negotiation probes ([tls-versions-check.ts](../src/lib/recon/tls-versions-check.ts)). |
+| `tls_versions_check` | Domain + **deep** | Legacy TLS 1.0/1.1 probes ([tls-versions-check.ts](../src/lib/recon/tls-versions-check.ts)). |
 | `dns_auth_details` | Domain + **deep** | SPF/DMARC policy strictness ([dns-auth-details.ts](../src/lib/recon/dns-auth-details.ts)). |
 | `dns_caa_check` | Domain + **deep** | CAA presence ([dns-caa-check.ts](../src/lib/recon/dns-caa-check.ts)). |
 
-**Mode behavior:** `quick` skips CT enumeration and **filters out `low`** severity findings (see `runScanModules`). See [api-reference.md](api-reference.md) — parts of that doc still describe **three** modules only; reconcile with §4.1 when editing docs.
+**Mode:** `quick` skips CT and deep-only modules and **filters out `low`** severity findings from the response. **Single source of truth:** keep [recon-modules.md](recon-modules.md) in sync with `MODULES` in `run-scan.ts`.
 
-**AI insights:** Client calls `POST /api/ai/insights` ([route.ts](../src/app/api/ai/insights/route.ts)); system rules in [insights-prompt.ts](../src/lib/ai/insights-prompt.ts).
-
-### 4.2 Convex / persistence (partial)
-
-**Schema:** `scans`, `aiInsightsCache` ([schema.ts](../convex/schema.ts)).
-
-**Backend:** Mutations/queries in [scans.ts](../convex/scans.ts), cache in [aiInsightsCache.ts](../convex/aiInsightsCache.ts) (writes require **INSIGHTS_CACHE_WRITE_SECRET** in Convex Dashboard per file comment).
-
-**UI gap:** [ScanHistorySidebar.tsx](../src/components/scan/ScanHistorySidebar.tsx) exists and reads `getUserScans`, but **`ScanHistorySidebar` is not imported in `ScanWorkspace` or elsewhere** — history UX is effectively **disconnected**. `createScan` / `updateScanInsights` mutations are **not wired** from the scan or insights flows in the traced client code paths. Convex AI cache `getCached` / `setCached` are **not called** from the Next.js insights route (insights are session-only unless extended).
-
-**Agents:** Treat “persisted scan history live in product” as **roadmap/until wired**, not demo truth unless implemented.
-
-### 4.3 Roadmap (from docs / product backlog)
-
-Examples: Shodan/ports, SSL Labs-style grading, WHOIS/HIBP, richer inputs — see [CONTEXT.md](../CONTEXT.md), [recon-modules.md](recon-modules.md), [features.ts](../src/data/features.ts) (`soon` entries).
+**Convex note:** [ScanHistorySidebar.tsx](../src/components/scan/ScanHistorySidebar.tsx) exists but **is not mounted** in `ScanWorkspace`; `createScan` / `updateScanInsights` **not wired** from scan/insights flows. Treat “cloud history live in product” as **roadmap** until wired.
 
 ---
 
-## 5. Gaps & risks (scoring / trust)
+## 8. Roadmap (prioritized for def/acc scoring)
 
-| Risk | Impact | Mitigation direction |
-|------|--------|----------------------|
-| **Copy overclaims** (“detección de amenazas en tiempo real”, “infraestructura objetivo”) | Judges expect SOC/SIEM realism; credibility hit | Prefer “instantáneo tras enviar dominio”, “instantáneo / en un solo POST”, **superficie pública observada**. |
-| **Docs/API reference lag** vs six modules | Confuses reviewers comparing code to README | Update [README.md](../README.md), [api-reference.md](api-reference.md), [user-guide.md](user-guide.md) checklist lines. |
-| **Abuse:** open `POST /api/scan` | Free scanning of arbitrary hosts possible | Rate limit, CAPTCHA, auth for all scans, or IP quotas; reaffirm authorized-use in UI checkbox. |
-| **Convex story weak** vs “cloud historial” | Sidebar copy implies live cloud history that is not mounted | Mount `ScanHistorySidebar` **or** call `createScan` after scan **or** remove misleading marketing until wired. |
-| **AI insights** without cache | Higher cost/no “smart caching” demo | Optionally wire Convex `aiInsightsCache` + secret; or document omission. |
+Order agreed for implementation narrative: **P1 Domain ownership → P2 Convex persistence → P3 AI guided chat.**
 
----
+| Priority | Theme | Outcome | Spec / tracking |
+|----------|-------|---------|-----------------|
+| **P1** | **Domain ownership verification** | Deep scans gated; misuse narrative reduced; aligns “authorized targets” with server enforcement | [prd-domain-ownership-verification.md](prd-domain-ownership-verification.md) |
+| **P2** | **Convex scan persistence** | After successful `/api/scan`, authenticated client calls `createScan`; mount `ScanHistorySidebar` in [`ScanWorkspace.tsx`](../src/components/scan/ScanWorkspace.tsx); optionally `updateScanInsights` | [architecture.md](architecture.md), [convex/scans.ts](../convex/scans.ts) |
+| **P3** | **AI Insights guided chat** | Multi-turn refinement grounded in scan snapshot; structured-first UI | [ai-chat-refinement-prd.md](ai-chat-refinement-prd.md) |
 
-## 6. Recommended demo narrative (2 minutes)
+### Tier A — High impact, low cost (backlog)
 
-1. **Audience:** SMB owner asked “¿estamos exponiendo algo obvio?”
-2. **Input:** Their **own** or organizer-approved demo domain (**deep**, signed in).
-3. **Show:** Modules table → highlights: SPF/DMARC gaps, TLS expiry or legacy TLS, hostname footprint from CT.
-4. **AI tab:** Generate insights — emphasize **verification steps** and **disclaimers**, not autonomy; optional **guided follow-up questions** stay grounded in the scan (see [PRD](ai-chat-refinement-prd.md)).
-5. **Close:** “Pasivo, con permiso — no pentest; próximo: historial persistente / más señales defensivas.”
-
-**Claims to avoid in voiceover:** “We detect attackers in real time,” “complete attack surface,” “replaces SOC,” “full compliance.”
-
-**Claims to use:** Visible public footprint, phishing-related email controls, HTTPS hygiene, prioritized fix list, human-in-the-loop AI.
-
----
-
-## 7. Improvement roadmap (prioritized for scoring)
-
-### Tier A — High impact, low cost
-
-- [ ] **Align marketing copy** with passive snapshot reality: `LandingHero.tsx`, root `layout.tsx` metadata, CTA/footer lines under `src/components/ui/`.
-- [ ] **Harmonize documentation** — module count, quick vs deep, list all six modules in README / api-reference / user-guide.
-- [ ] **UI “authorized targets only”** — short checkbox + link to [threat-model.md](threat-model.md) near submit (`ScanFormPanel.tsx`).
-- [ ] **Track matrix in slide/deck** — reuse §3 table for judging Q&A.
+- [ ] Align **marketing copy** with passive snapshot reality (`LandingHero.tsx`, root `layout.tsx`, CTAs).
+- [ ] Harmonize **README / api-reference / user-guide** — six modules, quick vs deep.
+- [ ] **Authorized targets** checkbox + link to [threat-model.md](threat-model.md) near submit (`ScanFormPanel.tsx`).
+- [ ] **Judging deck:** reuse §5–§6 tables for Q&A.
 
 ### Tier B — High impact, medium cost
 
-- [ ] **Wire Convex scan persistence:** after successful `/api/scan`, authenticated client calls `createScan`; restore from `ScanHistorySidebar` mounted in [`ScanWorkspace.tsx`](../src/components/scan/ScanWorkspace.tsx).
-- [ ] **Wire `updateScanInsights`** when user generates AI output (optional: store simplified payload only).
-- [ ] **`POST /api/scan` rate limiting** — middleware or Upstash/redis token bucket keyed by IP or user ID.
-- [ ] **Export** — downloadable Markdown/PDF of findings + top actions for “leave-behind.”
-- [ ] **`AiInsightsColumn` `servedFromCache`** — if Convex cache wired from API, pass prop from ScanWorkspace.
+- [ ] **`POST /api/scan` rate limiting** — middleware or token bucket (IP / user).
+- [ ] **Export** — Markdown/PDF of findings + top actions.
+- [ ] **`AiInsightsColumn` `servedFromCache`** when Convex cache is wired.
 
-### Tier C — High impact, larger scope (differentiation)
+### Tier C — Larger scope (differentiation)
 
-- [ ] **One flagship defensive signal** with clear SMB story — e.g. **HIBP domain breach** (with API ToS respected), **Censys/Shodan** passive host summary (keys in `.env.example` only), or **SSL Labs–style grading** analogue as documented in recon-modules roadmap.
-- [ ] **Ownership friction** — TXT verification token or Clerk org tenancy before deep scan (reduces misuse narrative for judges).
-- [ ] **AI Insights guided chat** — structured-first UI plus defensive follow-ups grounded in the scan snapshot; spec and implementation options in [ai-chat-refinement-prd.md](ai-chat-refinement-prd.md).
+- [ ] **Flagship passive signal** — HIBP (ToS-compliant), Shodan/Censys summary, or SSL Labs–style analogue ([recon-modules.md](recon-modules.md)).
 
 ---
 
-## 8. Agent handoff checklist
+## 9. Demo narrative (~2 minutes)
 
-When picking up scoring or alignment work:
+### English
 
-- [ ] Read [convex/_generated/ai/guidelines.md](../convex/_generated/ai/guidelines.md) before Convex changes per repo rules.
-- [ ] Prefer updating [.env.example](../.env.example) for **new optional keys** (`INSIGHTS_CACHE_WRITE_SECRET`, third-party APIs) — never commit real `.env`.
-- [ ] **Single source for modules:** synchronize [recon-modules.md](recon-modules.md) ↔ `MODULES` in [run-scan.ts](../src/lib/recon/run-scan.ts).
-- [ ] After wiring Convex client paths, grep for `ScanHistorySidebar`, `createScan`, `updateScanInsights`, `aiInsightsCache` usage and verify E2E.
-- [ ] Demo script: rehears with **domains you control**.
+1. **Audience:** SMB owner — “Are we obviously exposing something?”
+2. **Input:** **Your own** or organizer-approved demo domain; **deep**; signed in if the UI requires it.
+3. **Show:** Modules table first → SPF/DMARC gaps, TLS expiry or legacy TLS, CT hostname footprint.
+4. **AI tab:** Generate insights → **verification steps** and **disclaimers**, not autonomy. (Guided follow-ups: [PRD](ai-chat-refinement-prd.md) when shipped.)
+5. **Close:** Passive, with permission — not a pentest; next: **ownership-gated deep**, persistent history, more defensive signals.
+
+### Español
+
+1. **Audiencia:** dueño de PYME — “¿estamos exponiendo algo obvio?”
+2. **Entrada:** dominio **propio** o aprobado para demo; **deep**; sesión iniciada si la UI lo pide.
+3. **Mostrar:** tabla de módulos primero → huecos SPF/DMARC, caducidad TLS o TLS legado, huella de hostnames vía CT.
+4. **Pestaña IA:** generar insights — **pasos de verificación** y **descargos**, no autonomía.
+5. **Cierre:** “Pasivo, con permiso — no pentest; próximo: **deep con verificación de dominio**, historial persistente, más señales defensivas.”
+
+**Avoid claiming:** real-time attacker detection, complete attack surface, SOC replacement, full compliance.
+
+**Prefer claiming:** visible public footprint, phishing-related email controls, HTTPS hygiene, prioritized fix list, human-in-the-loop AI.
 
 ---
 
-## 9. Revision log
+## 10. Risks and mitigations
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Copy **overclaims** (real-time threats, “target infrastructure”) | Credibility | Use “snapshot after submit”, **observed public surface** |
+| **Docs lag** (3 vs 6 modules) | Reviewer confusion | Keep [api-reference.md](api-reference.md) and README aligned with §7 |
+| **Abuse:** open `POST /api/scan` | Offensive misuse narrative | Rate limits, auth, CAPTCHA; P1 ownership gate for deep |
+| **Convex “history”** not wired | Trust / demo gap | Mount sidebar + `createScan` or soften copy |
+| **AI insights** uncached | Cost / no cache demo | Wire `aiInsightsCache` or document omission |
+
+---
+
+## 11. Agent handoff checklist
+
+When picking up def/acc or scoring work:
+
+- [ ] Read [convex/_generated/ai/guidelines.md](../convex/_generated/ai/guidelines.md) before Convex changes (repo rule).
+- [ ] Add new optional keys only via [.env.example](../.env.example) — never commit real `.env`.
+- [ ] **Single source for modules:** [recon-modules.md](recon-modules.md) ↔ `MODULES` in [run-scan.ts](../src/lib/recon/run-scan.ts).
+- [ ] After wiring Convex clients, grep `ScanHistorySidebar`, `createScan`, `updateScanInsights`, `aiInsightsCache` and verify E2E.
+- [ ] Rehearse demos with **domains you control**.
+
+---
+
+## 12. Sub-spec registry
+
+| Document | Status | Role |
+|----------|--------|------|
+| [defacc-alignment-and-scoring-plan.md](defacc-alignment-and-scoring-plan.md) | **Live** | **This hub** |
+| [prd-domain-ownership-verification.md](prd-domain-ownership-verification.md) | Draft | P1 — deep scan gate |
+| [ai-chat-refinement-prd.md](ai-chat-refinement-prd.md) | Draft | P3 — guided chat |
+| [overview.md](overview.md) | Live | Product overview |
+| [threat-model.md](threat-model.md) | Live | Trust boundaries, abuse |
+| [recon-modules.md](recon-modules.md) | Live | Module catalog + roadmap |
+| [architecture.md](architecture.md) | Live | Stack and request flow |
+| [api-reference.md](api-reference.md) | Live (reconcile ongoing) | HTTP API |
+| [severity-system.md](severity-system.md) | Live | Finding severity rules |
+| [privacy-and-data-sources.md](privacy-and-data-sources.md) | Live | Data egress minimization |
+| [developer-setup.md](developer-setup.md) | Live | Local dev |
+| [user-guide.md](user-guide.md) | Live | End-user instructions |
+| [troubleshooting.md](troubleshooting.md) | Live | Common failures |
+
+---
+
+## 13. Revision log
 
 | Date | Change |
 |------|--------|
-| 2026-05-17 | Initial memo from plan track-alignment-doc. |
-| 2026-05-17 | Linked AI Insights guided chat PRD (Tier C + related docs + demo narrative). |
+| 2026-05-17 | Initial alignment memo. |
+| 2026-05-17 | Linked AI Insights guided chat PRD. |
+| 2026-05-17 | **Rewritten as PRD hub:** metadata, bilingual summary, track/feature matrices, P1–P3 roadmap, sub-spec registry. |

@@ -1,5 +1,32 @@
 # Troubleshooting
 
+| Field | Value |
+|-------|-------|
+| **Status** | Live |
+| **Owner** | Product / Engineering |
+| **Last updated** | 2026-05-17 |
+| **Linked from** | [Def/Acc product hub](defacc-alignment-and-scoring-plan.md) |
+
+## Purpose
+
+Capture **frequent failures** when running scans locally or calling the API, with **mitigations**.
+
+## Goals
+
+- **G1:** Shorten debug time for `400`s, module `error`, empty findings.
+- **G2:** Distinguish **expected skips** (IP input, `quick` mode) from bugs.
+
+## Non-goals
+
+- Replacing hosting-provider or corporate firewall support.
+
+## Known-issue snapshot
+
+| Topic | Status |
+|-------|--------|
+| **crt.sh slow / 5xx** | **Upstream** — retries / alternate domain; see below |
+| **No rate limit on `POST /api/scan`** | **Product gap** — track [product hub §10](defacc-alignment-and-scoring-plan.md#10-risks-and-mitigations) |
+
 ## UI: “Network error — try again.”
 
 **Cause:** Browser could not complete `fetch("/api/scan")` (server down, DNS, CORS misconfiguration in non-local setups, etc.).
@@ -59,7 +86,7 @@ Typical causes: **no HTTPS** on `:443`, **firewall**/cloud blocking outbound TLS
 ## Empty `findings`
 
 - **`inputKind: "ip"`** — expected: all hostname modules are **`skipped`** and **`findings`** is **`[]`**; use a **domain**.
-- **`inputKind: "domain"`** with all modules **`ok`** — expect **five or more findings** normally (certificate transparency footprint + SPF/DMARC/DKIM + at least one TLS row; TLS may attach extra rows for mismatches/chains).
+- **`inputKind: "domain"`** with all modules **`ok`** — expect **multiple findings normally** in **`deep`** (CT + email-auth + TLS + deep extras). In **`quick`**, **`low`** severities are **omitted** from the API payload — fewer rows are normal.
 
 If **`ok`** domains return **`findings: []`**, inspect server logs — inconsistent with current modules.
 
@@ -73,3 +100,4 @@ If **`ok`** domains return **`findings: []`**, inspect server logs — inconsist
 
 - [API reference](api-reference.md)
 - [Privacy & data sources](privacy-and-data-sources.md)
+- [Def/Acc product hub](defacc-alignment-and-scoring-plan.md)

@@ -1,9 +1,13 @@
 # PRD: AI Insights Guided Chat (Refinement After Scan)
 
-**Status:** Draft (documentation only — no implementation commitment in this doc)  
-**Owner:** Product / engineering (Hack LATAM)  
-**Last updated:** 2026-05-17  
-**Related:** [Def/Acc alignment & scoring plan](defacc-alignment-and-scoring-plan.md), [Threat model](threat-model.md), [Architecture](architecture.md)
+| Field | Value |
+|-------|-------|
+| **Status** | Draft — documentation only (no implementation commitment in this doc) |
+| **Priority** | **P3** (per [product hub](defacc-alignment-and-scoring-plan.md)) |
+| **Owner** | Product / engineering (Hack LATAM) |
+| **Last updated** | 2026-05-17 |
+| **Linked from** | [Def/Acc product hub](defacc-alignment-and-scoring-plan.md) |
+| **Related** | [Threat model](threat-model.md), [Architecture](architecture.md) |
 
 ---
 
@@ -78,7 +82,7 @@ Today, **one-shot** generation via `POST /api/ai/insights` ([`src/app/api/ai/ins
 
 **Model contract:** System prompt requires **JSON-only** output with fixed shape (`AiInsightsResponseBody`). Parsing in [`parseInsightsModelOutput`](../src/lib/ai/insights-prompt.ts).
 
-**Persistence:** Convex `aiInsightsCache` / `updateScanInsights` exist but are **not** wired from the Next insights route per [alignment doc §4.2](defacc-alignment-and-scoring-plan.md).
+**Persistence:** Convex `aiInsightsCache` / `updateScanInsights` exist but are **not** wired from the Next insights route per [product hub — Convex note](defacc-alignment-and-scoring-plan.md#7-technical-reference--canonical-scan-pipeline).
 
 ---
 
@@ -89,7 +93,7 @@ Today, **one-shot** generation via `POST /api/ai/insights` ([`src/app/api/ai/ins
 - **Primary panel (unchanged conceptually):** Executive summary, top actions, disclaimers, regenerate controls — as today.
 - **Secondary panel:** “Refinar” / “Ask follow-ups” — suggested **chips** (e.g. “Explain critical findings”, “What to verify first”, “What quick scan skipped”) plus free-text input.
 - **Optional:** Clicking a finding in Findings/Checklist could pre-fill context (“Question about: [title]”).
-- **Empty state:** Chips visible only after initial insights exist **or** after scan completes (product decision: allow chat without generating summary first — see §11).
+- **Empty state:** Chips visible only after initial insights exist **or** after scan completes — **adopted:** require **one successful** `POST /api/ai/insights` generation **before** follow-up chat ([§11](#11-decisions-adopted-recommendations)).
 
 ### 7.2 Behavioral requirements
 
@@ -107,7 +111,7 @@ Today, **one-shot** generation via `POST /api/ai/insights` ([`src/app/api/ai/ins
 
 ### 7.4 Localization
 
-- UI strings may stay Spanish-first to match current dashboard; model replies: Spanish default or user-selectable (open question §11).
+- **Adopted (MVP):** UI stays **Spanish-first**; model replies default to **Spanish** unless/until a locale toggle ships ([§11](#11-decisions-adopted-recommendations)).
 
 ---
 
@@ -149,7 +153,7 @@ Below are **mutually comparable** approaches. Teams can ship **Option A** first 
 |----------|-------------|
 | **Session-only (React state)** | Simplest; lost on refresh |
 | **sessionStorage** | Survives refresh within tab |
-| **Convex thread** | Persist per scan/user when scan persistence is wired (aligns with Tier B in alignment doc) |
+| **Convex thread** | Persist per scan/user when scan persistence is wired (aligns with [hub P2 — Convex persistence](defacc-alignment-and-scoring-plan.md#8-roadmap-prioritized-for-defacc-scoring)) |
 
 ---
 
@@ -186,13 +190,15 @@ sequenceDiagram
 
 ---
 
-## 11. Open questions
+## 11. Decisions (adopted recommendations)
 
-1. **Must user generate one-shot insights before chat?** (Recommended: yes — establishes baseline “disclaimers” + actions.)
-2. **Auth gate:** Chat only when signed in vs same as scan API exposure — aligns with abuse stance in alignment doc §5.
-3. **Convex:** Persist threads when `createScan` / `updateScanInsights` are wired, or stay ephemeral until then?
-4. **Caching:** Separate cache key for `{ snapshotHash, questionNormalized }` vs no cache for chat (likely no cache at MVP).
-5. **Export:** Include Q&A in future Markdown/PDF export (Tier B roadmap)?
+| Topic | Adopted decision |
+|-------|------------------|
+| **Insights before chat** | **Yes:** user must complete **one** successful structured insights generation before follow-up chat (establishes disclaimers + baseline actions). |
+| **Auth gate** | **Signed-in only** for `POST /api/ai/chat` (match tightened abuse stance in [hub §10](defacc-alignment-and-scoring-plan.md#10-risks-and-mitigations)); align with scan API policy when rate limits / ownership gates land. |
+| **Convex thread persistence** | **MVP:** **ephemeral** (React state or `sessionStorage`). **After** `createScan` / scan row persistence ships ([hub P2](defacc-alignment-and-scoring-plan.md#8-roadmap-prioritized-for-defacc-scoring)), **optional** persist `messages[]` on the scan record or a child table. |
+| **Caching chat turns** | **No cache** at MVP (`snapshotHash × question` cache deferred); rely on rate limits + token caps. |
+| **Export including Q&A** | **Defer** to Markdown/PDF export work ([hub §8 Tier B](defacc-alignment-and-scoring-plan.md#8-roadmap-prioritized-for-defacc-scoring)); when export ships, **include** Q&A thread if persisted or if still in session. |
 
 ---
 
@@ -200,7 +206,7 @@ sequenceDiagram
 
 - [ ] Update [api-reference.md](api-reference.md) when route exists.
 - [ ] Update [user-guide.md](user-guide.md) — “AI tab” section with follow-ups.
-- [ ] Demo narrative in [defacc-alignment-and-scoring-plan.md §6](defacc-alignment-and-scoring-plan.md): add half-sentence on guided questions **after** showing structured output.
+- [ ] Demo narrative in [defacc-alignment-and-scoring-plan.md §9](defacc-alignment-and-scoring-plan.md#9-demo-narrative-2-minutes): add half-sentence on guided questions **after** showing structured output.
 - [ ] `.env.example` — only if new env vars (unlikely if reusing OpenRouter).
 
 ---
@@ -219,3 +225,4 @@ sequenceDiagram
 | Date | Change |
 |------|--------|
 | 2026-05-17 | Initial PRD (docs-only). |
+| 2026-05-17 | Metadata (Priority P3, hub link); §11 decisions adopted; links updated for hub structure. |

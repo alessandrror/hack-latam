@@ -1,5 +1,25 @@
 # Severity system
 
+| Field | Value |
+|-------|-------|
+| **Status** | Live |
+| **Owner** | Product / Engineering |
+| **Last updated** | 2026-05-17 |
+| **Linked from** | [Def/Acc product hub](defacc-alignment-and-scoring-plan.md) |
+
+## Purpose
+
+Define how **`ScanFinding.severity`** maps to **product meaning** and module-specific rules, so UI and copy stay consistent.
+
+## Goals
+
+- **G1:** Keep severities **legible** for SMB operators (badges + plain-language titles).
+- **G2:** Reserve **`critical`** for unmistakable imminent harm (e.g. expired cert on :443).
+
+## Non-goals
+
+- CVSS scoring or automatic compliance mapping.
+
 Severities are defined in TypeScript as:
 
 ```ts
@@ -100,3 +120,4 @@ Findings include **`title`** and **`explanation`** for non-specialists. Prefer â
 
 - [User guide](user-guide.md)
 - [API reference](api-reference.md)
+- [Def/Acc product hub](defacc-alignment-and-scoring-plan.md)

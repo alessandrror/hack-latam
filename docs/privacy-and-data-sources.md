@@ -1,5 +1,25 @@
 # Privacy & data sources
 
+| Field | Value |
+|-------|-------|
+| **Status** | Live |
+| **Owner** | Product / Engineering |
+| **Last updated** | 2026-05-17 |
+| **Linked from** | [Def/Acc product hub](defacc-alignment-and-scoring-plan.md) |
+
+## Purpose
+
+Document **egress destinations**, **data minimization** stance, and **operator responsibilities** for passive scans.
+
+## Goals
+
+- **G1:** Transparency on what the server sends to **crt.sh**, **DNS**, and **target :443**.
+- **G2:** Minimize retention — clarify **session/no DB** default vs **Convex** when persistence is wired ([product hub](defacc-alignment-and-scoring-plan.md)).
+
+## Non-goals
+
+- Legal privacy policy text (add separately if needed for production).
+
 ## What leaves this app today
 
 | Destination | When | What is sent |
@@ -22,7 +42,8 @@ Resolver answers and certificate fields are distilled into **`ScanFinding` metad
 
 ## Data retained
 
-- **No database** in this codebase — results exist in memory for the HTTP response and in the browser until refresh.
+- **Default scan path:** results exist in memory for the HTTP response and in the browser until refresh.
+- **Convex:** `scans` / `aiInsightsCache` tables exist; **client wiring** for durable history and cached insights is **partial** — see [product hub §6–§7](defacc-alignment-and-scoring-plan.md).
 - Server logs (Next.js / hosting) may still record requests — configure appropriately for demos.
 
 ## Recommended practices (operators)
@@ -42,3 +63,4 @@ Resolver answers and certificate fields are distilled into **`ScanFinding` metad
 - [Threat model](threat-model.md)
 - [Recon modules](recon-modules.md)
 - [Troubleshooting](troubleshooting.md)
+- [Def/Acc product hub](defacc-alignment-and-scoring-plan.md)

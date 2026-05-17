@@ -1,8 +1,26 @@
 # Threat model
 
-## Purpose of this app
+| Field | Value |
+|-------|-------|
+| **Status** | Live |
+| **Owner** | Product / Engineering |
+| **Last updated** | 2026-05-17 |
+| **Linked from** | [Def/Acc product hub](defacc-alignment-and-scoring-plan.md) |
+
+## Purpose
 
 Provide **authorized** users (typically **asset owners** or **trainers**) a **passive** view of information already discoverable about a domain — framed for **SMB resilience** (hackathon **def/acc** track), not for unauthorized reconnaissance.
+
+## Goals
+
+- **G1 — Reduce misuse narrative:** position the app as **authorized-target** defensive tooling; complement with rate limits and (roadmap) ownership verification ([product hub §6](defacc-alignment-and-scoring-plan.md#6-feature-status-matrix)).
+- **G2 — Reduce misinterpretation:** passive snapshots are **incomplete**; link operators to [User guide](user-guide.md).
+- **G3 — Maintain proportionate mitigations** for a demo/MVP (document abuse paths; server-side enforcement for deep scans — see [prd-domain-ownership-verification.md](prd-domain-ownership-verification.md)).
+
+## Non-goals
+
+- Guaranteeing that all abuse is impossible (determined actors bypass the product).
+- Legal/TOS automation beyond documenting expectations.
 
 ## Trust boundaries
 
@@ -41,7 +59,7 @@ flowchart LR
 
 | Threat | Mitigation / stance |
 |--------|---------------------|
-| **Abuse as a bulk scanning / harassment tool** | Document “authorized targets only”; do not market for attacking third parties; consider rate limits / auth in production. |
+| **Abuse as a bulk scanning / harassment tool** | Document “authorized targets only”; do not market for attacking third parties; consider rate limits / auth in production; roadmap **ownership verification** for deep scans. |
 | **Misinterpretation (“green = safe”)** | Plain-language caveats: passive data is **incomplete**; see [User guide](user-guide.md). |
 | **Supply chain / API tampering** | Use HTTPS to crt.sh; validate HTTP status and JSON shape; surface errors to UI instead of failing silently. |
 | **Injection via user “target” field** | Input is normalized to domain/IP; still treat external API/TLS/cert data as **untrusted** (parse defensively). |
@@ -59,3 +77,4 @@ The UI stresses passive scans: **certificate transparency**, **DNS email-auth lo
 
 - [Privacy & data sources](privacy-and-data-sources.md)
 - [Overview](overview.md)
+- [Def/Acc product hub](defacc-alignment-and-scoring-plan.md)

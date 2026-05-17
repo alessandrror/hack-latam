@@ -1,19 +1,37 @@
 # Recon modules
 
-This page separates **what the code runs today** from the **roadmap** in [CONTEXT.md](../CONTEXT.md) and [init.md](../init.md).
+| Field | Value |
+|-------|-------|
+| **Status** | Live |
+| **Owner** | Product / Engineering |
+| **Last updated** | 2026-05-17 |
+| **Linked from** | [Def/Acc product hub](defacc-alignment-and-scoring-plan.md) |
+
+## Purpose
+
+This page separates **what the code runs today** from the **roadmap** in [CONTEXT.md](../CONTEXT.md) and [init.md](../init.md). It is the **canonical companion** to `MODULES` in [`run-scan.ts`](../src/lib/recon/run-scan.ts) — keep them in sync.
+
+## Goals
+
+- **G1:** Document each module’s **inputs**, **data sources**, and **skip rules** (quick vs deep, domain vs IP).
+- **G2:** Tie roadmap items to **def/acc** value (defensive visibility for SMBs).
+
+## Non-goals
+
+- Describing offensive techniques or “how to attack” narratives.
 
 Orchestration: modules are registered and run **in parallel** from [`src/lib/recon/run-scan.ts`](../src/lib/recon/run-scan.ts) (individual failures surface as module `error`).
 
-## Implemented today
+## Live modules
 
 | Module name (code) | Status | What it does | Source |
 |--------------------|--------|--------------|--------|
-| `subdomain_enum` | **Live** | Hostnames seen in public **certificate transparency** for `%.{domain}` | [crt.sh](https://crt.sh/) JSON API |
+| `subdomain_enum` | **Live** (deep only) | Hostnames seen in public **certificate transparency** for `%.{domain}` | [crt.sh](https://crt.sh/) JSON API |
 | `dns_health` | **Live** | Passive checks for **SPF** (root-domain TXT `v=spf1`), **DMARC** TXT at `_dmarc.{domain}`, and **DKIM** hints via a **short list** of common selectors `{selector}._domainkey.{domain}` | Resolver: Node `dns` (typically system recursive resolver / OS configuration) |
 | `tls_check` | **Live** | **TLS client** to **`{domain}:443`**, reads leaf certificate (**expiry**, issuer, SAN/CN hostname match vs requested name); `rejectUnauthorized: false` only to allow reading the certificate, then surfaces chain issues from `authorizationError` | Outbound TLS to **the target hostname** |
-| `tls_versions_check` | **Deep only** | **Sequential** isolated TLS handshakes (TLS 1.0–1.3) on port **443** to see which protocol versions the server negotiates; flags legacy TLS 1.0/1.1 | Outbound TLS to the same host |
-| `dns_auth_details` | **Deep only** | Parses **SPF** terminal policy (`-all` / `~all` / …) and **DMARC** `p=` / `pct=` when records exist | Node `dns` TXT (apex + `_dmarc`) |
-| `dns_caa_check` | **Deep only** | **CAA** records at the zone apex | Node `dns.resolveCaa` |
+| `tls_versions_check` | **Live** (deep only) | **Sequential** isolated TLS handshakes (TLS 1.0–1.3) on port **443** to see which protocol versions the server negotiates; flags legacy TLS 1.0/1.1 | Outbound TLS to the same host |
+| `dns_auth_details` | **Live** (deep only) | Parses **SPF** terminal policy (`-all` / `~all` / …) and **DMARC** `p=` / `pct=` when records exist | Node `dns` TXT (apex + `_dmarc`) |
+| `dns_caa_check` | **Live** (deep only) | **CAA** records at the zone apex | Node `dns.resolveCaa` |
 
 **Implementation files:**
 
@@ -46,19 +64,19 @@ Domain-only modules expect a **hostname** (`inputKind === "domain"`). For **`inp
 
 **When modules are skipped (quick scan):**
 
-**Deep-only** modules (`tls_versions_check`, `dns_auth_details`, `dns_caa_check`) register `skipped` when `mode === "quick"` (see [`run-scan.ts`](../src/lib/recon/run-scan.ts)).
+**Deep-only** modules (`tls_versions_check`, `dns_auth_details`, `dns_caa_check`) and **`subdomain_enum`** register `skipped` when `mode === "quick"` (see [`run-scan.ts`](../src/lib/recon/run-scan.ts)). **`Quick`** also filters **`low`** severity findings from the aggregate response.
 
 ## Planned / roadmap (not implemented yet)
 
 Conceptual additions for a fuller “attack surface” demo (from CONTEXT / init):
 
-| Module (conceptual) | Intended capability | Typical source |
-|---------------------|---------------------|----------------|
-| Port scan | Open ports on IPs | Shodan API |
-| SSL/TLS (external grade) | Formal letter-grade / simulators | SSL Labs API |
-| WHOIS / ASN | Registrant / hosting context | WHOIS API |
-| Exposed services | RDP, FTP, Telnet, etc. | Shodan API |
-| Leaked credentials | Breach visibility for emails | Have I Been Pwned API |
+| Module (conceptual) | Intended capability | Typical source | Def/acc tie-in |
+|---------------------|---------------------|----------------|----------------|
+| Port scan | Open ports on IPs | Shodan API | Early defensive visibility into exposed services |
+| SSL/TLS (external grade) | Formal letter-grade / simulators | SSL Labs API | Hygiene / downgrade detection beyond local handshake |
+| WHOIS / ASN | Registrant / hosting context | WHOIS API | Institutional resilience / vendor context |
+| Exposed services | RDP, FTP, Telnet, etc. | Shodan API | Critical-config drift visibility |
+| Leaked credentials | Breach visibility for emails | Have I Been Pwned API | Account takeover / reset hygiene |
 
 Adding these typically needs **API keys**, rate-limit handling, and UX updates — plus “authorized targets only” messaging. Introduce secrets via `.env.example` when applicable (none yet).
 
@@ -71,3 +89,4 @@ Severity is attached to **`ScanFinding`** objects, not to the module list. See [
 - [Architecture](architecture.md)
 - [Privacy & data sources](privacy-and-data-sources.md)
 - [Threat model](threat-model.md)
+- [Def/Acc product hub](defacc-alignment-and-scoring-plan.md)

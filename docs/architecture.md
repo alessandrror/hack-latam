@@ -1,5 +1,25 @@
 # Architecture
 
+| Field | Value |
+|-------|-------|
+| **Status** | Live |
+| **Owner** | Product / Engineering |
+| **Last updated** | 2026-05-17 |
+| **Linked from** | [Def/Acc product hub](defacc-alignment-and-scoring-plan.md) |
+
+## Purpose
+
+Describe the **runtime stack**, **request path** for scans, and **design decisions** that keep the product defensive and maintainable.
+
+## Goals
+
+- **G1:** Onboard engineers quickly (entry points, one JSON response per scan today).
+- **G2:** Document **where to extend** (new recon modules, Convex persistence).
+
+## Non-goals
+
+- Prescribing cloud hosting, CI, or observability (see ops docs if added later).
+
 ## Stack
 
 - **Next.js** (App Router) + **TypeScript**
@@ -59,7 +79,15 @@ flowchart TD
 
 [CONTEXT.md](../CONTEXT.md) and [init.md](../init.md) describe **streaming** partial results and a richer dashboard. The codebase still returns **one** JSON payload per request; extending would likely mean Server-Sent Events, chunked responses, or polling.
 
+## Design decisions
+
+- **Passive-only recon:** outbound traffic is limited to **crt.sh**, **DNS** lookups, and **TLS to :443** on the normalized hostname — no exploit payloads, no multi-port scans ([Threat model](threat-model.md)).
+- **Parallel modules:** [`run-scan.ts`](../src/lib/recon/run-scan.ts) runs modules concurrently; **isolate failures** so one module `error` does not abort peers.
+- **Single JSON response per scan:** simplifies UI and API today; streaming remains roadmap ([CONTEXT.md](../CONTEXT.md)).
+- **Convex for persistence (partial):** `scans` and `aiInsightsCache` exist; **client wiring** for history/cache is tracked in the [product hub §6–§7](defacc-alignment-and-scoring-plan.md).
+
 ## Related
 
 - [API reference](api-reference.md)
 - [Recon modules](recon-modules.md)
+- [Def/Acc product hub](defacc-alignment-and-scoring-plan.md)

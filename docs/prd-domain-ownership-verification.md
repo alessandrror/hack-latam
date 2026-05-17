@@ -3,8 +3,11 @@
 | Field | Value |
 |-------|-------|
 | **Status** | Draft — documentation only (not implemented) |
+| **Priority** | **P1** (per [product hub](defacc-alignment-and-scoring-plan.md)) |
 | **Owner** | Product / engineering |
-| **Related** | [threat-model.md](threat-model.md), [defacc-alignment-and-scoring-plan.md](defacc-alignment-and-scoring-plan.md), [architecture.md](architecture.md), [api-reference.md](api-reference.md) |
+| **Last updated** | 2026-05-17 |
+| **Linked from** | [Def/Acc product hub](defacc-alignment-and-scoring-plan.md) |
+| **Related** | [threat-model.md](threat-model.md), [architecture.md](architecture.md), [api-reference.md](api-reference.md) |
 
 ---
 
@@ -12,7 +15,7 @@
 
 Introduce **proof of domain ownership** as a prerequisite for **`deep`** scans (certificate transparency subdomain enumeration, TLS version probes, SPF/DMARC detail checks, CAA), while preserving a **lower-friction path** for **`quick`** scans that rely on DNS email-auth and a single HTTPS certificate check.
 
-Today [`POST /api/scan`](../src/app/api/scan/route.ts) accepts any normalized target without authentication, ownership proof, or enforced rate limits. That enables misuse as a lightweight reconnaissance helper against arbitrary domains — inconsistent with “authorized targets only” positioning ([threat-model.md](threat-model.md), [defacc-alignment-and-scoring-plan.md](defacc-alignment-and-scoring-plan.md) §5).
+Today [`POST /api/scan`](../src/app/api/scan/route.ts) accepts any normalized target without authentication, ownership proof, or enforced rate limits. That enables misuse as a lightweight reconnaissance helper against arbitrary domains — inconsistent with “authorized targets only” positioning ([threat-model.md](threat-model.md), [defacc-alignment-and-scoring-plan.md](defacc-alignment-and-scoring-plan.md) §10 Risks).
 
 ---
 
@@ -22,7 +25,7 @@ Today [`POST /api/scan`](../src/app/api/scan/route.ts) accepts any normalized ta
 
 - **Open API.** Any client can call `POST /api/scan` with `{ target, mode }`; successful normalization triggers [`runScanModules`](../src/lib/recon/run-scan.ts).
 - **Deep mode signal density.** Deep scans include [`subdomain_enum`](../src/lib/recon/subdomains.ts) (crt.sh footprint), [`tls_versions_check`](../src/lib/recon/tls-versions-check.ts), [`dns_auth_details`](../src/lib/recon/dns-auth-details.ts), and [`dns_caa_check`](../src/lib/recon/dns-caa-check.ts). Together these are the most valuable for **target triage** by a malicious actor.
-- **Documented gap.** Alignment memo explicitly lists abuse of open scan as a risk and suggests mitigations including auth and verification-style friction ([defacc-alignment-and-scoring-plan.md](defacc-alignment-and-scoring-plan.md) §5, Tier C “ownership friction”).
+- **Documented gap.** Product hub lists abuse of open scan as a risk and prioritizes ownership verification **P1** ([defacc-alignment-and-scoring-plan.md](defacc-alignment-and-scoring-plan.md) §8 Roadmap).
 
 ### 2.2 Why “login only” is insufficient
 
@@ -66,11 +69,11 @@ Aligned with existing [`quick` / `deep`](../src/lib/recon/run-scan.ts) semantics
 
 | Tier | Authentication | Ownership verification | Modules / capabilities |
 |------|----------------|-------------------------|-------------------------|
-| **T0 — blocked** | No session | — | No scans (redirect to sign-in), *unless* product policy explicitly allows rate-limited anonymous quick — see §11 |
+| **T0 — blocked** | No session | — | No scans (redirect to sign-in), *unless* product policy explicitly allows rate-limited anonymous quick — see [§14 Decisions](#14-decisions-adopted-recommendations) |
 | **T1 — quick** | Signed in (Clerk) | Not required | As today’s **quick**: `dns_health`, `tls_check`; skips CT enum and deep-only modules; filters `low` severity findings |
 | **T2 — deep** | Signed in | **Required** for `normalizedTarget` | Full **deep** pipeline: all six modules including `subdomain_enum`, `tls_versions_check`, etc. |
 
-**IP-only targets:** Existing modules skip domain-centric checks when `inputKind === "ip"` ([run-scan.ts](../src/lib/recon/run-scan.ts)). Ownership verification applies to **domain** targets only; policy for raw IP deep scans should either remain disabled or require a separate justification — **open decision** (§11).
+**IP-only targets:** Existing modules skip domain-centric checks when `inputKind === "ip"` ([run-scan.ts](../src/lib/recon/run-scan.ts)). Ownership verification applies to **domain** targets only. **Adopted policy:** `deep` **cannot** run for `inputKind === "ip"`; return `400` or treat as quick-only until a dedicated justification path exists ([§14](#14-decisions-adopted-recommendations)).
 
 ---
 
@@ -249,7 +252,7 @@ Copy must reinforce [authorized-use framing](threat-model.md): verification does
 |-------|----------|
 | **Token entropy** | Use `crypto.randomBytes(32)` (or equivalent) — hex or base64url; reject short tokens. |
 | **Server-side enforcement** | Never trust client-only “verified” flags; gate **always** in `/api/scan` server path. |
-| **Rate limiting** | Independent buckets for `/api/verify/check` and `/api/scan` per IP + userId ([defacc-alignment-and-scoring-plan.md](defacc-alignment-and-scoring-plan.md) Tier B). |
+| **Rate limiting** | Independent buckets for `/api/verify/check` and `/api/scan` per IP + userId ([defacc-alignment-and-scoring-plan.md](defacc-alignment-and-scoring-plan.md) §8 Tier B). |
 | **HTTP fetch SSRF** | Strict timeouts; limit redirects; HTTPS-only option; validate response body size; compare token only — no HTML parsing unless Option C is explicitly enabled later. |
 | **DNS amplification** | Throttle concurrent checks per user; backoff on repeated failures. |
 | **Revocation / expiry** | Domains change hands — support periodic re-verification (recommended **90-day** TTL with warning UX). |
@@ -276,13 +279,17 @@ Copy must reinforce [authorized-use framing](threat-model.md): verification does
 
 ---
 
-## 14. Open questions
+## 14. Decisions (adopted recommendations)
 
-1. **Verification TTL:** Mandatory re-verify after N days? **Recommendation:** yes (~90 days), soft-warning before hard-block.
-2. **Anonymous quick scan:** Needed for funnel vs locked-down demo? **Recommendation:** optional IP rate limit only if product insists — otherwise require sign-in for all scans.
-3. **Deep scan on raw IP:** Allow without domain verification or disallow deep for `inputKind === "ip"`?
-4. **Subdomain vs apex:** Verify apex only and allow deep scan on any subdomain under it, or require exact hostname match?
-5. **`scans` table:** Add `domainVerified` / timestamp at persistence time for audit?
+These close the former “open questions” list; implementation may still refine edge cases.
+
+| Topic | Adopted decision |
+|-------|------------------|
+| **Verification TTL** | **Yes:** ~**90 days** to `verified` status; soft UX warning before hard re-verify (align with §11 Revocation / expiry). |
+| **Anonymous quick scan** | **Default:** require **sign-in for all scans** post–trust launch; optional **hackathon-only** IP rate–limited anonymous `quick` is a **policy toggle** documented in ops, not the default posture. |
+| **Deep scan on raw IP** | **Disallow** `mode: "deep"` when `inputKind === "ip"` until a separate verification story exists; keep IP input on `quick` or return structured `400`. |
+| **Subdomain vs apex** | **Verify apex only** (registrable domain per §8.1). **Deep** allowed for any scan hostname whose normalized **apex** matches the verified apex. |
+| **`scans` audit field** | **Yes:** when persisting scans, store **`domainVerifiedAt`** (timestamp) or boolean snapshot that verification held at scan time — see §9.1 optional field. |
 
 ---
 
@@ -303,3 +310,4 @@ Copy must reinforce [authorized-use framing](threat-model.md): verification does
 | Date | Change |
 |------|--------|
 | 2026-05-17 | Initial PRD from Domain Ownership Verification plan. |
+| 2026-05-17 | Metadata (Priority P1, hub link); §14 decisions adopted; cross-links updated for hub renumbering. |

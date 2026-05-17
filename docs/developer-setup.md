@@ -1,5 +1,25 @@
 # Developer setup
 
+| Field | Value |
+|-------|-------|
+| **Status** | Live |
+| **Owner** | Product / Engineering |
+| **Last updated** | 2026-05-17 |
+| **Linked from** | [Def/Acc product hub](defacc-alignment-and-scoring-plan.md) |
+
+## Purpose
+
+Get a **local dev environment** running and show where to add recon modules safely.
+
+## Goals
+
+- **G1:** Reproducible `pnpm dev` flow.
+- **G2:** Point extenders at **`run-scan.ts`** + [Recon modules](recon-modules.md).
+
+## Non-goals
+
+- **Prerequisites** are **not** a substitute for reading [Next.js](https://nextjs.org) docs when APIs differ — see [AGENTS.md](../AGENTS.md).
+
 ## Prerequisites
 
 - **Node.js** (see Next.js 16 engine expectations)
@@ -29,6 +49,9 @@ src/
     subdomains.ts      # subdomain_enum
     dns-health.ts      # dns_health
     tls-check.ts       # tls_check
+    tls-versions-check.ts   # tls_versions_check (deep)
+    dns-auth-details.ts       # dns_auth_details (deep)
+    dns-caa-check.ts         # dns_caa_check (deep)
     run-scan.ts        # Registers modules + Promise.all orchestration
   types/scan.ts        # ScanFinding, ScanModuleResult, ScanResponseBody
 ```
@@ -60,3 +83,4 @@ This repo uses **Next.js 16** with the App Router. If APIs differ from older doc
 
 - [Architecture](architecture.md)
 - [API reference](api-reference.md)
+- [Def/Acc product hub](defacc-alignment-and-scoring-plan.md)

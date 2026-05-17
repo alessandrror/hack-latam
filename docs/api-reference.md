@@ -1,16 +1,50 @@
 # API reference
 
+| Field | Value |
+|-------|-------|
+| **Status** | Live (reconcile with code during doc edits) |
+| **Owner** | Product / Engineering |
+| **Last updated** | 2026-05-17 |
+| **Linked from** | [Def/Acc product hub](defacc-alignment-and-scoring-plan.md) |
+
+## Purpose
+
+Document HTTP APIs used by the dashboard and integrations. Canonical **module list** and skip rules: [Recon modules](recon-modules.md) and [`run-scan.ts`](../src/lib/recon/run-scan.ts).
+
+## Goals
+
+- **G1:** Accurate **request/response** shapes for `POST /api/scan`.
+- **G2:** Surface **known gaps** between docs and deployment (rate limits, auth) honestly.
+
+## Non-goals
+
+- OpenAPI export (not required here); third-party API keys beyond what the app uses internally.
+
+## Known gaps (**reconcile regularly**)
+
+- **`POST /api/scan`** has **no enforced rate limit** in route code today — abuse risk called out in [threat model](threat-model.md) and [product hub §10](defacc-alignment-and-scoring-plan.md#10-risks-and-mitigations).
+- **Deep scan ownership verification** is specified in [prd-domain-ownership-verification.md](prd-domain-ownership-verification.md) but **not implemented** yet (future `403 OWNERSHIP_REQUIRED`).
+
 Base URL in local development: `http://localhost:3000`.
 
 ## `POST /api/scan`
 
-Runs a passive scan via [`runScanModules`](../src/lib/recon/run-scan.ts): **`subdomain_enum`** (crt.sh when `domain`), **`dns_health`** (TXT/DKIM lookups when `domain`), **`tls_check`** (TLS handshake to port **443** when `domain`). IPv4 scans skip domain-only modules. Optional **`mode`** `"quick" \| "deep"`: **`quick`** skips **`subdomain_enum`** and strips **`low`** severity findings from the response (defaults to **`deep`**).
+Runs a passive scan via [`runScanModules`](../src/lib/recon/run-scan.ts). **Registered modules (six):**
+
+- **`subdomain_enum`** — certificate transparency hostnames (**runs in `deep` only** for domains).
+- **`dns_health`** — SPF / DMARC / common DKIM selector probes (**domain**).
+- **`tls_check`** — TLS handshake to **`{domain}:443`**, leaf cert read (**domain**).
+- **`tls_versions_check`** — legacy TLS negotiation probes (**`deep` + domain**).
+- **`dns_auth_details`** — SPF/DMARC policy strictness (**`deep` + domain**).
+- **`dns_caa_check`** — CAA at zone apex (**`deep` + domain**).
+
+IPv4 scans **skip** domain-only modules. Optional **`mode`** `"quick" \| "deep"`: **`quick`** skips **`subdomain_enum`**, all **`deep`-only** modules, and **filters out `low`** severity findings from the response (defaults to **`deep`**).
 
 Implemented in [`src/app/api/scan/route.ts`](../src/app/api/scan/route.ts). Runtime: **Node.js** (`export const runtime = "nodejs"`).
 
 ### Example response shape (conceptual)
 
-A successful **`domain`** scan typically returns **`modules`** with three names plus multiple **`findings`** (hostname footprint, SPF/DMARC/DKIM checks, TLS expiry/match). Inspect `curl`/browser JSON while developing.
+A successful **`domain`** **`deep`** scan returns **`modules`** with up to **six** names and multiple **`findings`** (hostname footprint, SPF/DMARC/DKIM, TLS rows, optional legacy TLS / DMARC policy / CAA). Inspect `curl`/browser JSON while developing.
 
 ### Request
 
@@ -23,7 +57,7 @@ A successful **`domain`** scan typically returns **`modules`** with three names 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `target` | `string` | Yes* | User input: domain, URL with hostname, or IPv4. |
-| `mode` | `"deep" \| "quick"` | No | Defaults to **`deep`**. **`quick`**: skips CT subdomain enumeration and omits **`low`** severity findings. Other values are treated as **`deep`**. |
+| `mode` | `"deep" \| "quick"` | No | Defaults to **`deep`**. **`quick`**: skips CT and deep-only modules; omits **`low`** severity findings. Other values are treated as **`deep`**. |
 
 \* If `target` is missing or not a string, it is treated as empty and validation fails.
 
@@ -158,3 +192,4 @@ Implemented in [`src/lib/recon/normalize-target.ts`](../src/lib/recon/normalize-
 
 - [Architecture](architecture.md) — end-to-end flow.
 - [Troubleshooting](troubleshooting.md) — common API errors.
+- [Def/Acc product hub](defacc-alignment-and-scoring-plan.md)
