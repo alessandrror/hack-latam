@@ -43,7 +43,7 @@ Resolver answers and certificate fields are distilled into **`ScanFinding` metad
 ## Data retained
 
 - **Default scan path:** results exist in memory for the HTTP response and in the browser until refresh.
-- **Convex:** `scans` / `aiInsightsCache` tables exist; **client wiring** for durable history and cached insights is **partial** — see [product hub §6–§7](defacc-alignment-and-scoring-plan.md).
+- **Convex:** los escaneos con sesión se guardan en `scans`; la caché de IA (`aiInsightsCache`) usa `normalizedTarget`. La UI prioriza el historial en Convex para usuarios autenticados ([product hub](defacc-alignment-and-scoring-plan.md)).
 - Server logs (Next.js / hosting) may still record requests — configure appropriately for demos.
 
 ## Recommended practices (operators)
