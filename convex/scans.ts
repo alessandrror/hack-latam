@@ -51,7 +51,7 @@ export const updateScanInsights = mutationGeneric({
     }
 
     const scan = await ctx.db.get(args.scanId);
-    if (!scan || scan.userId !== identity.subject) {
+    if (!scan || scan.userId !== identity.tokenIdentifier) {
       throw new Error("Forbidden");
     }
 
