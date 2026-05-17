@@ -99,8 +99,9 @@ function parseChatBody(payload: unknown): AiChatRequestBody | null {
     messages.push({ role: o.role, content: o.content });
   }
 
-  const lastUser = [...messages].reverse().find((m) => m.role === "user");
-  if (!lastUser || !lastUser.content.trim()) return null;
+  if (messages[messages.length - 1]?.role !== "user") return null;
+  const lastUser = messages[messages.length - 1];
+  if (!lastUser.content.trim()) return null;
 
   return {
     scanSnapshot,
