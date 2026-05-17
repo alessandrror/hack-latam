@@ -15,8 +15,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import type { TargetInputKind } from "@/lib/recon/normalize-target";
+import { cn } from "@/lib/utils";
+import { apexBypassesOwnershipVerification } from "@/lib/verify/ownership-bypass";
 
 import {
   OwnershipVerificationSection,
@@ -80,12 +81,16 @@ export function ScanFormPanel({
     scanMode === "deep" && authLoaded && !isAuthenticated;
   const deepIpBlocked =
     scanMode === "deep" && authLoaded && targetKind === "ip";
+  const ownershipBypassDemo = Boolean(
+    apexDomain && apexBypassesOwnershipVerification(apexDomain),
+  );
   const deepOwnershipBlocked =
     scanMode === "deep" &&
     authLoaded &&
     isAuthenticated &&
     Boolean(apexDomain) &&
-    verification?.status !== "verified";
+    verification?.status !== "verified" &&
+    !ownershipBypassDemo;
 
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
 
@@ -222,7 +227,8 @@ export function ScanFormPanel({
         {scanMode === "deep" &&
         isAuthenticated &&
         apexDomain &&
-        verification === undefined ? (
+        verification === undefined &&
+        !ownershipBypassDemo ? (
           <p
             className="text-center text-[11px] text-muted-foreground"
             role="status"
@@ -236,7 +242,8 @@ export function ScanFormPanel({
         apexDomain &&
         verification !== undefined &&
         (verification === null || verification.status !== "verified") &&
-        !deepIpBlocked ? (
+        !deepIpBlocked &&
+        !ownershipBypassDemo ? (
           <p className="text-center text-[11px] leading-snug text-muted-foreground">
             Pulsa <strong className="text-foreground">Lanzar comprobaciones</strong>{" "}
             para abrir la verificación del apex{" "}

@@ -1,3 +1,4 @@
+import { apexBypassesOwnershipVerification } from "@/lib/verify/ownership-bypass";
 import { classifyAndNormalizeTarget } from "@/lib/recon/normalize-target";
 import { extractApexFromNormalizedHost } from "@/lib/recon/extract-apex";
 import { api, convexAuthedClient } from "@/lib/convex-server";
@@ -79,40 +80,42 @@ export async function POST(request: Request) {
       );
     }
 
-    try {
-      const client = await convexAuthedClient();
-      const verification = await client.query(api.verifiedDomains.getStatus, {
-        domain: apex,
-      });
-      if (!verification || verification.status !== "verified") {
-        return NextResponse.json(
-          {
-            error:
-              "Debes verificar la titularidad del dominio antes de un escaneo profundo.",
-            code: "OWNERSHIP_REQUIRED",
-            apex,
-          },
-          { status: 403 },
-        );
+    if (!apexBypassesOwnershipVerification(apex)) {
+      try {
+        const client = await convexAuthedClient();
+        const verification = await client.query(api.verifiedDomains.getStatus, {
+          domain: apex,
+        });
+        if (!verification || verification.status !== "verified") {
+          return NextResponse.json(
+            {
+              error:
+                "Debes verificar la titularidad del dominio antes de un escaneo profundo.",
+              code: "OWNERSHIP_REQUIRED",
+              apex,
+            },
+            { status: 403 },
+          );
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg === "Unauthorized" || msg.includes("Unauthorized")) {
+          return NextResponse.json(
+            {
+              error: "Sesión no válida para comprobar la titularidad.",
+              code: "AUTH_REQUIRED",
+            },
+            { status: 401 },
+          );
+        }
+        if (msg.includes("NEXT_PUBLIC_CONVEX_URL")) {
+          return NextResponse.json(
+            { error: "Convex no está configurado.", code: "CONFIG" },
+            { status: 500 },
+          );
+        }
+        throw e;
       }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg === "Unauthorized" || msg.includes("Unauthorized")) {
-        return NextResponse.json(
-          {
-            error: "Sesión no válida para comprobar la titularidad.",
-            code: "AUTH_REQUIRED",
-          },
-          { status: 401 },
-        );
-      }
-      if (msg.includes("NEXT_PUBLIC_CONVEX_URL")) {
-        return NextResponse.json(
-          { error: "Convex no está configurado.", code: "CONFIG" },
-          { status: 500 },
-        );
-      }
-      throw e;
     }
   }
 
