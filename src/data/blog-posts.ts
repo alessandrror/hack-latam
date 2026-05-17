@@ -146,7 +146,7 @@ export const BLOG_POSTS: BlogPost[] = [
     ],
   },
   {
-    slug: "contraseñas-reutilizadas",
+    slug: "contrasenas-reutilizadas",
     title: "Contraseñas reutilizadas tras filtraciones",
     excerpt:
       "Cuando un empleado reutiliza credenciales, una brecha ajena se convierte en acceso a tu correo o VPN.",
@@ -306,8 +306,253 @@ export const BLOG_POSTS: BlogPost[] = [
       "Documenta RTO/RPO y asigna responsables con contacto 24/7.",
     ],
   },
+  {
+    slug: "rdp-expuesto-internet",
+    title: "RDP expuesto a Internet: la puerta trasera mas buscada",
+    excerpt:
+      "El puerto 3389 abierto al mundo es uno de los primeros blancos en escaneos automatizados.",
+    category: "Superficie de ataque",
+    tags: ["RDP", "puertos", "acceso remoto"],
+    readMinutes: 4,
+    publishedAt: "2026-04-10",
+    coverImage:
+      "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200&q=80&auto=format&fit=crop",
+    coverImageAlt: "Pantalla con codigo y tematica de seguridad informatica",
+    author: "Equipo Hack LATAM",
+    problem:
+      "Equipos habilitan escritorio remoto para soporte y olvidan restringir el firewall. Los bots prueban credenciales por defecto y exploits conocidos en minutos.",
+    impact:
+      "Ransomware, movimiento lateral y cifrado de estaciones de trabajo completas.",
+    recommendations: [
+      "Cierra 3389 al publico; usa VPN o solucion Zero Trust con MFA.",
+      "Habilita bloqueo de cuenta y NLA en todas las sesiones RDP.",
+      "Audita puertos expuestos con escaneo pasivo recurrente.",
+    ],
+  },
+  {
+    slug: "panel-admin-publico",
+    title: "Paneles /admin sin restriccion: acceso de cortesia para atacantes",
+    excerpt:
+      "Rutas de administracion indexables o sin IP allowlist son incidentes esperando el primer escaneo.",
+    category: "Superficie de ataque",
+    tags: ["admin", "WAF", "hardening"],
+    readMinutes: 5,
+    publishedAt: "2026-04-08",
+    coverImage:
+      "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&q=80&auto=format&fit=crop",
+    coverImageAlt: "Codigo fuente en monitor con tema oscuro",
+    author: "Equipo Hack LATAM",
+    problem:
+      "Aplicaciones legacy dejan /admin, /wp-admin o /manager/html accesibles sin VPN. Los crawlers los catalogan y los atacantes prueban credenciales por defecto.",
+    impact:
+      "Toma de control del CMS, defacement y pivot hacia bases de datos internas.",
+    recommendations: [
+      "Restringe paneles admin por IP, VPN o autenticacion en capa de red.",
+      "Elimina rutas de demo y cambia URLs por defecto cuando el producto lo permita.",
+      "Anade MFA y rate limiting en todos los formularios de login administrativos.",
+    ],
+  },
+  {
+    slug: "cors-permisivo",
+    title: "CORS demasiado permisivo: tu API confia en cualquier origen",
+    excerpt:
+      "Access-Control-Allow-Origin: * en APIs con cookies o tokens facilita robo de datos desde sitios maliciosos.",
+    category: "Headers",
+    tags: ["CORS", "API", "browser"],
+    readMinutes: 4,
+    publishedAt: "2026-04-05",
+    coverImage:
+      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&q=80&auto=format&fit=crop",
+    coverImageAlt: "Desarrollador trabajando en codigo de aplicacion web",
+    author: "Equipo Hack LATAM",
+    problem:
+      "Equipos habilitan CORS amplio para integraciones rapidas y nunca lo endurecen. Un sitio atacante puede leer respuestas autenticadas del navegador de la victima.",
+    impact:
+      "Exfiltracion de datos de sesion, acciones no autorizadas y violaciones de politica de origen cruzado.",
+    recommendations: [
+      "Lista explicitamente origenes permitidos; evita wildcard con credenciales.",
+      "Separa APIs publicas de APIs autenticadas con politicas distintas.",
+      "Revisa headers_http en tu escaneo y corrige Access-Control mal configurado.",
+    ],
+  },
+  {
+    slug: "whois-sin-privacidad",
+    title: "WHOIS sin privacidad: filtracion de contactos y superficie social",
+    excerpt:
+      "Datos de registro publicos alimentan spear-phishing y vishing contra tu equipo.",
+    category: "DNS",
+    tags: ["WHOIS", "privacidad", "OSINT"],
+    readMinutes: 3,
+    publishedAt: "2026-04-02",
+    coverImage:
+      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=80&auto=format&fit=crop",
+    coverImageAlt: "Red global iluminada vista desde el espacio",
+    author: "Equipo Hack LATAM",
+    problem:
+      "Dominios corporativos registrados con nombre, correo y telefono reales del fundador o IT. Los atacantes cruzan esa data con LinkedIn para campanas dirigidas.",
+    impact:
+      "Phishing de alta credibilidad, spam dirigido y acoso a personas clave.",
+    recommendations: [
+      "Activa privacy protection en el registrador o usa contactos role-based.",
+      "Separa correos de WHOIS de buzones personales y monitorea filtraciones.",
+      "Revisa periodicamente registros RDAP/WHOIS tras renovaciones o transferencias.",
+    ],
+  },
+  {
+    slug: "certificados-autofirmados-produccion",
+    title: "Certificados autofirmados en produccion: advertencias que nadie lee",
+    excerpt:
+      "TLS sin CA de confianza entrena a usuarios a ignorar alertas del navegador.",
+    category: "TLS",
+    tags: ["TLS", "certificados", "confianza"],
+    readMinutes: 4,
+    publishedAt: "2026-03-28",
+    coverImage:
+      "https://images.unsplash.com/photo-1633265486064-086b219458ec?w=1200&q=80&auto=format&fit=crop",
+    coverImageAlt: "Candado digital sobre teclado de portatil",
+    author: "Equipo Hack LATAM",
+    problem:
+      "Entornos internos publicados a Internet conservan certificados autofirmados por comodidad. Empleados aprenden a hacer clic en continuar de todos modos.",
+    impact:
+      "Facilita ataques MITM, phishing con proxies y perdida de confianza en avisos legitimos.",
+    recommendations: [
+      "Emite certificados de una CA publica o PKI interna confiable en todos los hosts publicos.",
+      "Automatiza renovacion y alertas de caducidad en subdominios descubiertos.",
+      "Usa tls_check para detectar cadenas incompletas o autofirmadas en :443.",
+    ],
+  },
+  {
+    slug: "simulacro-phishing-equipo",
+    title: "Sin simulacros de phishing: el factor humano sin entrenar",
+    excerpt:
+      "La tecnologia no compensa un clic en un enlace creible si el equipo nunca practico.",
+    category: "Email",
+    tags: ["phishing", "awareness", "capacitacion"],
+    readMinutes: 5,
+    publishedAt: "2026-03-25",
+    coverImage:
+      "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=1200&q=80&auto=format&fit=crop",
+    coverImageAlt: "Persona revisando correos en portatil",
+    author: "Equipo Hack LATAM",
+    problem:
+      "PYMEs invierten en firewall pero no en educacion continua. Un solo clic en OAuth falso o adjunto malicioso compromete Microsoft 365.",
+    impact:
+      "BEC, robo de credenciales y malware inicial en la red corporativa.",
+    recommendations: [
+      "Ejecuta campanas de simulacion trimestrales con metricas por area.",
+      "Combina SPF/DMARC fuerte con reportes de usuario para correos sospechosos.",
+      "Refuerza senales visibles: dominio del remitente, urgencia artificial y adjuntos inesperados.",
+    ],
+  },
+  {
+    slug: "waf-ausente-perimetro",
+    title: "Sin WAF en el perimetro: ataques web sin filtro",
+    excerpt:
+      "Exponer aplicaciones directamente a Internet sin capa de filtrado facilita SQLi, XSS y fuerza bruta a escala.",
+    category: "Headers",
+    tags: ["WAF", "perimetro", "aplicaciones web"],
+    readMinutes: 4,
+    publishedAt: "2026-03-22",
+    coverImage:
+      "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80&auto=format&fit=crop",
+    coverImageAlt: "Servidores en rack de centro de datos",
+    author: "Equipo Hack LATAM",
+    problem:
+      "PYMEs despliegan apps en VPS o PaaS sin WAF ni rate limiting. Los escaneos automaticos explotan vulnerabilidades OWASP Top 10 en horas.",
+    impact:
+      "Defacement, robo de bases de datos y caida de servicio por bots.",
+    recommendations: [
+      "Coloca WAF o reverse proxy con reglas OWASP delante de todo trafico HTTP publico.",
+      "Habilita rate limiting y bloqueo geografico si tu audiencia es regional.",
+      "Revisa headers_http y rutas expuestas en escaneos pasivos recurrentes.",
+    ],
+  },
+  {
+    slug: "vpn-sin-parches",
+    title: "VPN sin parches: puerta de entrada a la red interna",
+    excerpt:
+      "Concentradores VPN con CVEs publicados son el blanco preferido antes de moverse lateralmente.",
+    category: "Operaciones",
+    tags: ["VPN", "parches", "acceso remoto"],
+    readMinutes: 5,
+    publishedAt: "2026-03-20",
+    coverImage:
+      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&q=80&auto=format&fit=crop",
+    coverImageAlt: "Persona trabajando con laptop en entorno remoto",
+    author: "Equipo Hack LATAM",
+    problem:
+      "Appliances VPN quedan en versiones antiguas porque reiniciar implica ventana de mantenimiento. Los exploits aparecen en foros el mismo dia del advisory.",
+    impact:
+      "Acceso completo a la red corporativa, exfiltracion y despliegue de ransomware.",
+    recommendations: [
+      "Aplica parches en ventana acordada; manten un plan de rollback documentado.",
+      "Segmenta redes para que usuarios VPN no lleguen a servidores criticos por defecto.",
+      "Monitorea intentos de autenticacion fallidos y geolocalizaciones anomalas.",
+    ],
+  },
+  {
+    slug: "shadow-it-saas",
+    title: "Shadow IT: SaaS no aprobados con datos corporativos",
+    excerpt:
+      "Herramientas adoptadas sin revision de seguridad multiplican superficie y fugas accidentales.",
+    category: "Cloud",
+    tags: ["SaaS", "shadow IT", "gobierno"],
+    readMinutes: 5,
+    publishedAt: "2026-03-18",
+    coverImage:
+      "https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=1200&q=80&auto=format&fit=crop",
+    coverImageAlt: "Codigo en pantalla con reflejos azules",
+    author: "Equipo Hack LATAM",
+    problem:
+      "Equipos suben hojas de calculo con clientes a apps de terceros sin DPA ni SSO. IT descubre el servicio cuando hay incidente o factura duplicada.",
+    impact:
+      "Filtracion de PII, cumplimiento incumplido y cuentas huerfanas sin offboarding.",
+    recommendations: [
+      "Mantén catalogo de SaaS aprobados con SSO y MFA obligatorio.",
+      "Bloquea categorias de alto riesgo en proxy corporativo cuando sea viable.",
+      "Audita OAuth grants y sesiones activas en Microsoft 365 / Google trimestralmente.",
+    ],
+  },
+  {
+    slug: "monitoreo-sin-alertas",
+    title: "Logs sin alertas: detectar el ataque cuando ya termino",
+    excerpt:
+      "Guardar eventos sin reglas de correlacion es archivo muerto, no seguridad operativa.",
+    category: "Operaciones",
+    tags: ["SIEM", "logs", "deteccion"],
+    readMinutes: 4,
+    publishedAt: "2026-03-15",
+    coverImage:
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80&auto=format&fit=crop",
+    coverImageAlt: "Dashboard de metricas y graficos de monitoreo",
+    author: "Equipo Hack LATAM",
+    problem:
+      "PYMEs activan logging en cloud pero nadie revisa. Los indicadores de compromiso aparecen dias antes del ransomware en logs que nadie consulta.",
+    impact:
+      "MTTD alto, respuesta reactiva y perdida de evidencia forense por rotacion corta.",
+    recommendations: [
+      "Define 5-10 alertas criticas: login fallido masivo, nuevo admin, egress inusual.",
+      "Centraliza logs de DNS, correo, VPN y endpoints en un solo panel.",
+      "Ejecuta tabletop de incidente trimestral con datos reales de tus alertas.",
+    ],
+  },
 ];
 
+const SLUG_ALIASES: Record<string, string> = {
+  "contraseñas-reutilizadas": "contrasenas-reutilizadas",
+};
+
+export function resolveBlogSlug(slug: string): string {
+  let decoded = slug;
+  try {
+    decoded = decodeURIComponent(slug);
+  } catch {
+    decoded = slug;
+  }
+  return SLUG_ALIASES[decoded] ?? decoded;
+}
+
 export function getPostBySlug(slug: string): BlogPost | undefined {
-  return BLOG_POSTS.find((p) => p.slug === slug);
+  const resolved = resolveBlogSlug(slug);
+  return BLOG_POSTS.find((p) => p.slug === resolved);
 }

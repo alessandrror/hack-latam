@@ -9,6 +9,20 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/blog/contraseñas-reutilizadas",
+        destination: "/blog/contrasenas-reutilizadas",
+        permanent: true,
+      },
+      {
+        source: "/blog/contrase%C3%B1as-reutilizadas",
+        destination: "/blog/contrasenas-reutilizadas",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -21,9 +21,9 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
   const post = getPostBySlug(slug);
-  if (!post) return { title: "Art?culo no encontrado" };
+  if (!post) return { title: "Art\u00edculo no encontrado" };
   return {
-    title: `${post.title} ? Hack LATAM`,
+    title: `${post.title} | Hack LATAM`,
     description: post.excerpt,
     openGraph: {
       title: post.title,
@@ -116,8 +116,8 @@ export default async function BlogPostPage({ params }: PageProps) {
                 Valida tu postura en minutos
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Ejecuta un an?lisis pasivo sobre tu dominio y contrasta estos hallazgos
-                con tu configuraci?n real.
+                Ejecuta un an\u00e1lisis pasivo sobre tu dominio y contrasta estos hallazgos
+                con tu configuraci\u00f3n real.
               </p>
               <Link
                 href="/scan"
@@ -126,7 +126,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                   "mt-5 inline-flex min-h-12 rounded-xl px-6 text-sm",
                 )}
               >
-                Ejecutar análisis pasivo &rarr;
+                Ejecutar an\u00e1lisis pasivo &rarr;
               </Link>
             </div>
 
