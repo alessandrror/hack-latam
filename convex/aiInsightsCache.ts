@@ -19,7 +19,7 @@ function validateCacheWriteSecret(provided: string): boolean {
 }
 
 export const getCached = queryGeneric({
-  args: { normalizedTarget: v.string() },
+  args: { normalizedTarget: v.string(), now: v.number() },
   returns: v.union(
     v.object({
       insights: v.any(),
