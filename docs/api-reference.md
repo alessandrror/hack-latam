@@ -188,6 +188,79 @@ Implemented in [`src/lib/recon/normalize-target.ts`](../src/lib/recon/normalize-
 - Domain-like label → lowercased, leading `www.` stripped, `inputKind: "domain"`.
 - Company names, IPv6, or malformed hostnames → **`unknown`** → **400**.
 
+## `POST /api/ai/insights`
+
+Generates **structured** defensive insights (executive summary, prioritized actions, per-finding snippets) from a minimal scan snapshot. Implemented in [`src/app/api/ai/insights/route.ts`](../src/app/api/ai/insights/route.ts).
+
+### Request
+
+Same snapshot fields as used by the dashboard (see [`AiInsightsRequestBody`](../src/types/ai-insights.ts)): `normalizedTarget`, `inputKind`, `scanMode`, hostname counts, `findings[]`, `modules[]`, optional `checklistRows[]`. **No bulk hostname lists** are sent to the model.
+
+### Responses
+
+- **`200`** — `AiInsightsResponseBody` (JSON).
+- **`400`** — invalid body.
+- **`502`** / **`503`** — model or configuration errors.
+
+---
+
+## `POST /api/ai/chat`
+
+**Follow-up conversational layer** grounded in the **current scan snapshot** and optional prior structured insights. Requires **Clerk sign-in**. Implemented in [`src/app/api/ai/chat/route.ts`](../src/app/api/ai/chat/route.ts).
+
+### Auth and limits
+
+| Rule | Value |
+|------|--------|
+| Authentication | **Required** (`401` if unsigned) |
+| Prior insights | **Required** — client must send `priorInsights` from a successful insights generation |
+| Rate limit | **40 requests / hour / user** (in-memory per instance; `429` with `Retry-After`) |
+| Max user turns / session | **10** (client-enforced; server validates message list) |
+| Max message length | **2000** characters |
+
+### Request body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `scanSnapshot` | `AiInsightsRequestBody` | Yes | Same minimal snapshot as insights |
+| `priorInsights` | `AiInsightsResponseBody` | Yes | Last successful structured insights |
+| `messages` | `{ role: "user" \| "assistant", content: string }[]` | Yes | Conversation thread; **last message must be `user`** |
+
+**Example**
+
+```json
+{
+  "scanSnapshot": { "normalizedTarget": "example.com", "inputKind": "domain", "scanMode": "deep", "totalHostnames": 12, "hostnameSampleShownCount": 12, "findings": [], "modules": [] },
+  "priorInsights": { "executiveSummary": "…", "topActions": [], "disclaimers": ["…"], "perFindingInsightsById": {} },
+  "messages": [
+    { "role": "user", "content": "¿Qué debería verificar primero?" }
+  ]
+}
+```
+
+### Response — `200 OK`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `reply` | `string` | Assistant answer (Spanish by default) |
+| `citedFindingIds` | `string[]` (optional) | Finding ids referenced |
+| `citedChecklistIds` | `string[]` (optional) | Checklist row ids referenced |
+| `disclaimers` | `string[]` (optional) | Passive-scan caveats when relevant |
+| `modelUsed` | `string` (optional) | OpenRouter model slug |
+
+### Errors
+
+| Status | When |
+|--------|------|
+| `401` | Not signed in |
+| `400` | Invalid body, or missing `priorInsights` |
+| `429` | Rate limit exceeded |
+| `502` / `503` | Model / `OPENROUTER_API_KEY` errors |
+
+Spec: [AI chat refinement PRD](ai-chat-refinement-prd.md).
+
+---
+
 ## Related
 
 - [Architecture](architecture.md) — end-to-end flow.
