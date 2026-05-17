@@ -28,16 +28,43 @@ function parsePriorInsights(raw: unknown): AiInsightsResponseBody | undefined {
   return raw as AiInsightsResponseBody;
 }
 
+function normalizeChatMessageContent(
+  content: string,
+  role: AiChatMessage["role"],
+  isLatestUserMessage: boolean,
+): string | null {
+  const trimmed = content.trim();
+  if (!trimmed) return null;
+
+  const maxLen = isLatestUserMessage
+    ? AI_CHAT_LIMITS.maxMessageLength
+    : AI_CHAT_LIMITS.maxHistoryMessageLength;
+
+  if (trimmed.length > maxLen) {
+    if (isLatestUserMessage) return null;
+    return `${trimmed.slice(0, maxLen - 1)}…`;
+  }
+  return trimmed;
+}
+
 function parseChatMessages(raw: unknown): AiChatMessage[] | null {
   if (!Array.isArray(raw) || raw.length === 0) return null;
   const out: AiChatMessage[] = [];
-  for (const item of raw) {
+  for (let i = 0; i < raw.length; i++) {
+    const item = raw[i];
     if (!item || typeof item !== "object") return null;
     const m = item as Record<string, unknown>;
     if (m.role !== "user" && m.role !== "assistant") return null;
     if (typeof m.content !== "string") return null;
-    const content = m.content.trim();
-    if (!content || content.length > AI_CHAT_LIMITS.maxMessageLength) return null;
+
+    const isLatest = i === raw.length - 1;
+    const isLatestUser = isLatest && m.role === "user";
+    const content = normalizeChatMessageContent(
+      m.content,
+      m.role as AiChatMessage["role"],
+      isLatestUser,
+    );
+    if (!content) return null;
     out.push({ role: m.role, content });
   }
   if (out[out.length - 1]?.role !== "user") return null;
@@ -143,7 +170,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "Cuerpo inválido. Requiere scanSnapshot, messages[] (último mensaje de usuario) y priorInsights opcional.",
+          "Cuerpo inválido. Revisa scanSnapshot, que el último mensaje sea del usuario (máx. 2000 caracteres) y que priorInsights exista si ya generaste orientación IA.",
       },
       { status: 400 },
     );

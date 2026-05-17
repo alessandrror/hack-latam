@@ -14,32 +14,10 @@ import {
   type AiChatMessage,
   type AiChatResponseBody,
 } from "@/types/ai-chat";
-import { SignInButton } from "@clerk/nextjs";
+import { SignInButton, useUser } from "@clerk/nextjs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChatMarkdown } from "./ChatMarkdown";
-
-const SUGGESTED_CHIPS: { label: string; prompt: string }[] = [
-  {
-    label: "Explicar críticos",
-    prompt:
-      "Explica en español los hallazgos críticos y medios de este escaneo y por qué importan para una PYME.",
-  },
-  {
-    label: "Qué verificar primero",
-    prompt:
-      "Dado mi tiempo limitado, ¿qué debería verificar primero esta semana? Cita ids de hallazgos.",
-  },
-  {
-    label: "Handoff DNS",
-    prompt:
-      "Redacta bullets cortos que pueda enviar a mi proveedor DNS/hosting para corregir SPF/DMARC/TLS según este escaneo.",
-  },
-  {
-    label: "Alcance del scan",
-    prompt:
-      "¿Qué no cubrió este escaneo pasivo y qué no debo asumir como seguro?",
-  },
-];
+import { buildSuggestedChatPrompts } from "@/lib/ai/chat-suggested-prompts";
+import { ChatMessageBubble, ChatTypingBubble } from "./ChatMessageBubble";
 
 type AiChatPanelProps = {
   scanSnapshot: AiInsightsRequestBody;
@@ -63,6 +41,14 @@ export function AiChatPanel({
   onCitationClick,
   className,
 }: AiChatPanelProps) {
+  const { user } = useUser();
+  const userImageUrl = user?.imageUrl ?? null;
+  const userName =
+    user?.fullName?.trim() ||
+    user?.firstName?.trim() ||
+    user?.username?.trim() ||
+    null;
+
   const storageKey = useMemo(
     () =>
       chatSessionStorageKey(
@@ -96,6 +82,15 @@ export function AiChatPanel({
       behavior: "smooth",
     });
   }, [messages, loading]);
+
+  const suggestedChips = useMemo(
+    () =>
+      buildSuggestedChatPrompts({
+        priorInsights,
+        scanSnapshot,
+      }),
+    [priorInsights, scanSnapshot],
+  );
 
   const userTurnCount = messages.filter((m) => m.role === "user").length;
   const atTurnLimit = userTurnCount >= AI_CHAT_LIMITS.maxTurnsPerSession;
@@ -158,7 +153,7 @@ export function AiChatPanel({
   );
 
   const shellClass = cn(
-    "flex h-full max-h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-muted/20",
+    "flex h-full w-full min-h-0 max-h-full flex-col overflow-hidden rounded-lg border border-border bg-muted/20",
     className,
   );
 
@@ -201,40 +196,26 @@ export function AiChatPanel({
 
       <div
         ref={scrollRef}
-        className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-y-contain px-4 py-3"
+        className="min-h-0 w-full flex-1 space-y-4 overflow-y-auto overscroll-y-contain px-3 py-4 pb-5 sm:px-5"
         aria-live="polite"
       >
         {messages.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
-            Sin mensajes aún. Desliza las opciones de abajo para iniciar la
+          <p className="text-center text-xs text-muted-foreground">
+            Sin mensajes aún. Elige una opción sugerida abajo para iniciar la
             conversación.
           </p>
         ) : (
           messages.map((msg, idx) => (
-            <div
+            <ChatMessageBubble
               key={`${msg.role}-${idx}-${msg.content.slice(0, 24)}`}
-              className={
-                msg.role === "user"
-                  ? "ml-4 rounded-lg bg-accent/10 px-3 py-2"
-                  : "mr-1 rounded-lg border border-border bg-background px-3 py-2"
-              }
-            >
-              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {msg.role === "user" ? "Tú" : "Asesor"}
-              </p>
-              {msg.role === "assistant" ? (
-                <ChatMarkdown content={msg.content} />
-              ) : (
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                  {msg.content}
-                </p>
-              )}
-            </div>
+              role={msg.role}
+              content={msg.content}
+              userImageUrl={userImageUrl}
+              userName={userName}
+            />
           ))
         )}
-        {loading ? (
-          <p className="text-xs text-muted-foreground">Pensando…</p>
-        ) : null}
+        {loading ? <ChatTypingBubble /> : null}
       </div>
 
       <div className="shrink-0 border-t border-border bg-muted/30">
@@ -274,21 +255,23 @@ export function AiChatPanel({
 
         <div className="space-y-2 px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Preguntas sugeridas
+            Preguntas sugeridas para este escaneo
           </p>
           <div
             ref={chipsRef}
-            className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border"
+            className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border"
             role="list"
+            aria-label="Preguntas sugeridas"
           >
-            {SUGGESTED_CHIPS.map((chip) => (
+            {suggestedChips.map((chip) => (
               <button
-                key={chip.label}
+                key={chip.id}
                 type="button"
                 role="listitem"
                 disabled={loading || atTurnLimit}
                 onClick={() => void sendMessage(chip.prompt)}
-                className="shrink-0 snap-start rounded-full border border-border bg-background px-4 py-2 text-sm font-medium whitespace-nowrap text-foreground transition hover:border-accent hover:bg-accent/5 disabled:cursor-not-allowed disabled:opacity-45"
+                title={chip.prompt}
+                className="shrink-0 snap-start whitespace-nowrap rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:border-accent hover:bg-accent/5 disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {chip.label}
               </button>

@@ -23,7 +23,10 @@ export interface AiChatResponseBody {
 }
 
 export const AI_CHAT_LIMITS = {
+  /** New user input in the composer. */
   maxMessageLength: 2000,
+  /** Prior turns in the thread (assistant replies can be long). */
+  maxHistoryMessageLength: 12_000,
   maxMessagesInRequest: 20,
   maxMessagesSentToModel: 8,
   maxTurnsPerSession: 10,

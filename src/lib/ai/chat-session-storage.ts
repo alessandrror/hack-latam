@@ -1,4 +1,13 @@
-import type { AiChatMessage } from "@/types/ai-chat";
+import { AI_CHAT_LIMITS, type AiChatMessage } from "@/types/ai-chat";
+
+function truncateForStorage(msg: AiChatMessage): AiChatMessage {
+  const max =
+    msg.role === "assistant"
+      ? AI_CHAT_LIMITS.maxHistoryMessageLength
+      : AI_CHAT_LIMITS.maxMessageLength;
+  if (msg.content.length <= max) return msg;
+  return { ...msg, content: `${msg.content.slice(0, max - 1)}…` };
+}
 
 const STORAGE_PREFIX = "hacklatam-ai-chat:";
 
@@ -33,7 +42,10 @@ export function loadChatMessages(key: string): AiChatMessage[] {
 export function saveChatMessages(key: string, messages: AiChatMessage[]): void {
   if (typeof window === "undefined") return;
   try {
-    sessionStorage.setItem(key, JSON.stringify(messages));
+    sessionStorage.setItem(
+      key,
+      JSON.stringify(messages.map(truncateForStorage)),
+    );
   } catch {
     /* quota or private mode */
   }
