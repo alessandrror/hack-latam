@@ -32,3 +32,11 @@ export interface AiChatResponseBody {
   disclaimers?: string[];
   modelUsed?: string;
 }
+
+export const AI_CHAT_LIMITS = {
+  maxMessageLength: 2000,
+  maxMessagesInRequest: 20,
+  maxMessagesSentToModel: 8,
+  maxTurnsPerSession: 10,
+  rateLimitPerHour: 40,
+} as const;

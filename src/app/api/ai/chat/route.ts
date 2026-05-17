@@ -45,7 +45,7 @@ function parseChatBody(payload: unknown): AiChatRequestBody | null {
     messages.push({ role: o.role, content: o.content });
   }
 
-  // The model prompt assumes the last message is the user's current question.
+  // The model prompt assumes the last message is authored by the user.
   if (messages[messages.length - 1]?.role !== "user") return null;
   const lastUser = messages[messages.length - 1];
   if (!lastUser.content.trim()) return null;
