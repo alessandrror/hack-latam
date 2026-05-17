@@ -26,7 +26,7 @@ export const createScan = mutationGeneric({
     }
 
     return await ctx.db.insert("scans", {
-      userId: identity.subject,
+      userId: identity.tokenIdentifier,
       target: args.target,
       normalizedTarget: args.normalizedTarget,
       inputKind: args.inputKind,
