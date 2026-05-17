@@ -68,7 +68,7 @@ export function ChatMarkdown({ content }: { content: string }) {
   }
 
   return (
-    <div className="space-y-2 text-sm leading-relaxed text-foreground">
+    <div className="w-full space-y-2 text-sm leading-relaxed text-foreground">
       {blocks.map((block, bi) => {
         if (block.type === "ul") {
           return (
