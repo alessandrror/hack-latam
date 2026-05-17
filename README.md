@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hack LATAM — Attack Surface Dashboard
 
-## Getting Started
+A small web app for **PYMEs / SMBs without a security team**: enter a domain or URL and get a **passive** recon report in plain language. Built for a hackathon **defense / acceleration** track — resilience, not offensive tooling.
 
-First, run the development server:
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Other package managers:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install && npm run dev
+# or
+yarn install && yarn dev
+```
 
-## Learn More
+## Run a scan
 
-To learn more about Next.js, take a look at the following resources:
+1. Enter **`example.com`** or **`https://www.example.com`** (URLs are normalized to a hostname).
+2. Click **Start scan**.
+3. Review **Modules** (status per recon step) and **Findings** (severity + short explanation).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Example targets:** `cloudflare.com`, `github.com`, or your own domain.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Note:** Raw **IPv4** addresses are accepted as input, but **subdomain discovery via certificate transparency requires a domain** — for IPs, `subdomain_enum` is marked **skipped** with an explanatory message.
 
-## Deploy on Vercel
+## What you’ll see
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Normalized target** — how the server interpreted your input (`domain` vs `ip`).
+- **Modules** — each recon module reports `ok`, `error`, or `skipped`, plus timing when relevant.
+- **Findings** — `critical` / `medium` / `low` badges, a title, a plain-language explanation, and optional metadata (e.g. a list of hostnames from public cert logs).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Passive & non-intrusive
+
+Scans use **public data and standard queries** (today: certificate transparency via [crt.sh](https://crt.sh/)). There is **no exploitation**, no credential stuffing, and no intent to disrupt targets. See [docs/threat-model.md](docs/threat-model.md) and [docs/privacy-and-data-sources.md](docs/privacy-and-data-sources.md).
+
+## Limitations today
+
+- **Implemented:** subdomain / hostname discovery from **crt.sh** only (`subdomain_enum`).
+- **Planned** (see [CONTEXT.md](CONTEXT.md), [init.md](init.md), [docs/recon-modules.md](docs/recon-modules.md)): port / exposed-service signals (e.g. Shodan), SSL/TLS review, DNS email-auth checks, WHOIS/ASN, breach lookups — **not wired in this repo yet**.
+- Streaming UI updates are **not** implemented; the UI waits for one `POST /api/scan` response.
+- No `.env.example` yet — current integration uses a **public** API only.
+
+## Documentation
+
+| Doc | Audience |
+|-----|----------|
+| [Overview](docs/overview.md) | Everyone |
+| [User guide](docs/user-guide.md) | End users / judges |
+| [API reference](docs/api-reference.md) | Integrators |
+| [Architecture](docs/architecture.md) | Developers |
+| [Recon modules](docs/recon-modules.md) | What runs today vs roadmap |
+| [Severity system](docs/severity-system.md) | Reading results |
+| [Threat model](docs/threat-model.md) | Security & abuse posture |
+| [Privacy & data sources](docs/privacy-and-data-sources.md) | Data sent externally |
+| [Troubleshooting](docs/troubleshooting.md) | When scans fail |
+| [Developer setup](docs/developer-setup.md) | Extending the app |
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Development server |
+| `pnpm build` | Production build |
+| `pnpm start` | Run production server |
+| `pnpm lint` | ESLint |
+
+## Stack
+
+- **Next.js** (App Router) — [Next.js docs](https://nextjs.org/docs)
+- **React** + **TypeScript**
+- **Tailwind CSS** v4
