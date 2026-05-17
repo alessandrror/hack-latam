@@ -41,7 +41,7 @@ Scans use **public data, DNS lookups, and a normal HTTPS handshake on port 443**
 
 ## Limitations today
 
-- **Implemented modules:** see [docs/recon-modules.md](docs/recon-modules.md) and [`src/lib/recon/run-scan.ts`](src/lib/recon/run-scan.ts) (certificate transparency footprints, SPF/DMARC/DKIM hints, TLS on port **443**, deep-mode extras such as legacy TLS probes, SPF/DMARC policy detail, CAA).
+- **Implemented modules:** see [docs/recon-modules.md](docs/recon-modules.md) and [`src/lib/recon/run-scan.ts`](src/lib/recon/run-scan.ts): certificate transparency, SPF/DMARC/DKIM hints, TLS on port **443**, optional passive **OSINT** (`security.txt`, HTTPS headers, MTA‑STS/TLS‑RPT/BIMI, DNSSEC hint); deep-mode extras include legacy TLS, SPF/DMARC policy parsing, CAA. Optional pasted **emails** (same apex) extend OSINT hostname coverage (`POST /api/scan` `emails`).
 - **Roadmap** (CONTEXT / init / recon-modules): richer inputs (company-name resolution, IP ranges), Shodan, SSL Labs–style grading, WHOIS/HIBP, streaming UI — not all wired here yet.
 - **Streaming** UI / partial SSE updates are **not** implemented — one JSON response per `POST /api/scan`.
 - Optional **AI insights** use OpenRouter; copy `.env.example` to `.env.local` for `OPENROUTER_API_KEY` if you enable that route.
@@ -70,6 +70,7 @@ Scans use **public data, DNS lookups, and a normal HTTPS handshake on port 443**
 | `pnpm build` | Production build |
 | `pnpm start` | Run production server |
 | `pnpm lint` | ESLint |
+| `pnpm test` | Vitest (unit checks, e.g. email-domain parsing helpers) |
 
 ## Stack
 

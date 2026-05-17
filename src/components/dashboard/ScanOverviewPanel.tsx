@@ -2,7 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { riskFindings } from "@/lib/dashboard/findings";
 import type { AiInsightsResponseBody } from "@/types/ai-insights";
-import type { ScanFinding, ScanModuleResult, Severity } from "@/types/scan";
+import type {
+  EmailDomainSummary,
+  ScanFinding,
+  ScanModuleResult,
+  Severity,
+} from "@/types/scan";
 
 function severityLabelEs(severity: Severity): string {
   switch (severity) {
@@ -36,6 +41,7 @@ function severityPillClasses(severity: Severity): string {
 
 export type ScanOverviewPanelProps = {
   normalizedTarget: string;
+  emailDomainSummary?: EmailDomainSummary;
   findings: ScanFinding[];
   modules: ScanModuleResult[];
   totalHostnames: number;
@@ -49,6 +55,7 @@ export type ScanOverviewPanelProps = {
 
 export function ScanOverviewPanel({
   normalizedTarget,
+  emailDomainSummary,
   findings,
   modules,
   totalHostnames,
@@ -75,6 +82,58 @@ export function ScanOverviewPanel({
           {normalizedTarget || "—"}
         </p>
       </div>
+
+      {emailDomainSummary ? (
+        <div className="rounded-2xl border border-border bg-muted/35 px-5 py-4 shadow-sm backdrop-blur-sm">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            OSINT por dominios de correo (mismo apex)
+          </p>
+          <dl className="mt-3 space-y-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              <dt className="font-medium text-foreground">Apex</dt>
+              <dd className="font-mono text-foreground">
+                {emailDomainSummary.primaryApex ?? "—"}
+              </dd>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              <dt className="font-medium text-foreground">Líneas analizadas</dt>
+              <dd>{emailDomainSummary.parsedEmailLineCount}</dd>
+            </div>
+            {emailDomainSummary.eligibleEmailDomains.length > 0 ? (
+              <div>
+                <dt className="font-medium text-foreground">
+                  Dominios incluidos
+                </dt>
+                <dd className="mt-1 font-mono text-xs text-foreground break-all">
+                  {emailDomainSummary.eligibleEmailDomains.join(", ")}
+                </dd>
+              </div>
+            ) : (
+              <p className="text-xs">
+                No quedaron dominios del mismo apex para OSINT desde la lista pegada (o todos
+                quedaron fuera del apex del objetivo).
+              </p>
+            )}
+            {emailDomainSummary.skippedExternalDomains.length > 0 ? (
+              <div>
+                <dt className="font-medium text-amber-800 dark:text-amber-500/95">
+                  Omitidos (apex distinto)
+                </dt>
+                <dd className="mt-1 font-mono text-xs text-foreground break-all opacity-90">
+                  {emailDomainSummary.skippedExternalDomains.join(", ")}
+                </dd>
+              </div>
+            ) : null}
+            {emailDomainSummary.truncatedEmailList ||
+            emailDomainSummary.truncatedUniqueDomainList ? (
+              <p className="text-xs text-amber-900/90 dark:text-amber-500/90">
+                Entrada truncada por límites de tamaño — revisa el panel de hallazgos
+                correspondiente.
+              </p>
+            ) : null}
+          </dl>
+        </div>
+      ) : null}
 
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" role="list">
         <li>

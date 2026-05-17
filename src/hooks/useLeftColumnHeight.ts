@@ -16,7 +16,7 @@ export function useLeftColumnHeight(
 
   useEffect(() => {
     if (!enabled) {
-      setHeight(null);
+      queueMicrotask(() => setHeight(null));
       return;
     }
 

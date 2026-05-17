@@ -23,6 +23,19 @@ export interface ScanModuleResult {
   errorMessage?: string;
 }
 
+/** Present when the client submitted an `emails` field (audit + UI). No mailbox parts. */
+export interface EmailDomainSummary {
+  primaryApex: string | null;
+  /** Same-apex hostnames derived from pasted emails (normalized, no `www.` prefix) */
+  eligibleEmailDomains: string[];
+  /** Domains from emails that did not match `primaryApex` */
+  skippedExternalDomains: string[];
+  /** Lines/tokens processed from input (capped) */
+  parsedEmailLineCount: number;
+  truncatedEmailList: boolean;
+  truncatedUniqueDomainList: boolean;
+}
+
 export interface ScanResponseBody {
   target: string;
   normalizedTarget: string;
@@ -30,4 +43,6 @@ export interface ScanResponseBody {
   mode: ScanMode;
   findings: ScanFinding[];
   modules: ScanModuleResult[];
+  /** Set when the request included a non-empty `emails` payload */
+  emailDomainSummary?: EmailDomainSummary;
 }

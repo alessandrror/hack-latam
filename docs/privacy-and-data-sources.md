@@ -27,10 +27,13 @@ Document **egress destinations**, **data minimization** stance, and **operator r
 | **crt.sh** | `inputKind === "domain"` and `subdomain_enum` runs | HTTPS GET `https://crt.sh/?q={encodeURIComponent("%.domain")}&output=json` |
 | **DNS resolver** | `dns_health` runs for **domains** | TXT (and transitive resolver behavior) lookups for apex, `_dmarc.{domain}`, `{selector}._domainkey.{domain}` — powered by Node `dns` / host resolver config |
 | **Target hostname :443** | `tls_check` runs for **domains** | Outbound TLS client handshake to **`{normalized domain}:443`** (SNI = same hostname); certificate bytes processed server-side |
+| **Each OSINT hostname (HTTPS)** | `osint_passive` runs with at least **one hostname** (`primary domain` and/or domains derived from pasted `emails` under the **same apex**) | Outbound **`https://{host}/.well-known/security.txt`** (GET) and **`https://{host}/`** (HEAD, then GET fallback) |
+| **OSINT resolver lookups** | `osint_passive` | `_mta-sts.{host}`, `_smtp._tls.{host}`, `default._bimi.{host}`, plus **DNSKEY** at the apex behind each host |
+| **Convex `emailDomainSummaries`** table | Signed-in **`POST /api/scan`** with non-empty **`emails`** body | Persisted **counts + domain RHS strings only** (no mailbox locals) for audit/debug |
 
-The **User-Agent** for crt.sh is set in [`src/lib/recon/subdomains.ts`](../src/lib/recon/subdomains.ts). Replace `+https://github.com/` with your real **repository or contact** URL when you publish.
+The **User-Agent** for crt.sh is set in [`src/lib/recon/subdomains.ts`](../src/lib/recon/subdomains.ts); OSINT HTTPS calls set a UA in [`src/lib/recon/osint-passive.ts`](../src/lib/recon/osint-passive.ts). Replace `+https://github.com/` with your real **repository or contact** URL when you publish.
 
-**IPv4-only input:** crt.sh is **not** called; subdomain/DNS/TLS hostname modules register **skipped** (see [`src/lib/recon/run-scan.ts`](../src/lib/recon/run-scan.ts)).
+**IPv4-only input:** crt.sh is **not** called; subdomain/DNS/TLS hostname modules register **skipped** (see [`src/lib/recon/run-scan.ts`](../src/lib/recon/run-scan.ts)). OSINT HTTPS requests require **explicit hostnames** — when the primary target is IPv4-only, **`osint_passive`** skips unless pasted emails yield same-apex hostnames eligible for probing.
 
 ## What crt.sh returns
 
@@ -43,7 +46,7 @@ Resolver answers and certificate fields are distilled into **`ScanFinding` metad
 ## Data retained
 
 - **Default scan path:** results exist in memory for the HTTP response and in the browser until refresh.
-- **Convex:** `scans` / `aiInsightsCache` tables exist; **client wiring** for durable history and cached insights is **partial** — see [product hub §6–§7](defacc-alignment-and-scoring-plan.md).
+- **Convex:** `scans`, `verifiedDomains`, `aiInsightsCache`, and **`emailDomainSummaries`** (optional email-domain audit rows) persist when configured; Convex OAuth wiring may still omit some UI surfaces — see [product hub §6–§7](defacc-alignment-and-scoring-plan.md).
 - Server logs (Next.js / hosting) may still record requests — configure appropriately for demos.
 
 ## Recommended practices (operators)
