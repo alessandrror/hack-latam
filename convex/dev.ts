@@ -14,14 +14,22 @@ export const clearAllTablesForDev = mutationGeneric({
       throw new Error("Forbidden");
     }
 
-    const scans = await ctx.db.query("scans").collect();
-    for (const doc of scans) {
-      await ctx.db.delete(doc._id);
-    }
-    const cacheRows = await ctx.db.query("aiInsightsCache").collect();
-    for (const doc of cacheRows) {
-      await ctx.db.delete(doc._id);
-    }
+    // Batch deletes to avoid timing out when a dev workspace has lots of rows.
+    const deleteTableInBatches = async (table: string) => {
+      const batchSize = 250;
+      const maxRounds = 200; // safety cap
+
+      for (let round = 0; round < maxRounds; round++) {
+        const docs = await ctx.db.query(table).take(batchSize);
+        if (docs.length === 0) return;
+        for (const doc of docs) {
+          await ctx.db.delete(doc._id);
+        }
+      }
+    };
+
+    await deleteTableInBatches("scans");
+    await deleteTableInBatches("aiInsightsCache");
 
     return null;
   },
