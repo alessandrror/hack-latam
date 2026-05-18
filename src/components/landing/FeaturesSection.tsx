@@ -77,8 +77,8 @@ function ModuleCard({
         className={cn(
           "group feature-card-scan relative flex h-full min-h-[200px] flex-col overflow-hidden rounded-2xl p-6 ring-1 transition duration-500",
           isLive
-            ? "bg-gradient-to-br from-card/90 via-card to-primary/10 ring-primary/25 shadow-[0_12px_40px_-12px_rgba(2,132,199,0.35)] hover:-translate-y-1.5 hover:ring-primary/50 hover:shadow-[0_24px_56px_-16px_rgba(2,132,199,0.45)]"
-            : "bg-card/30 ring-border/50 ring-dashed hover:-translate-y-0.5 hover:bg-card/50 hover:ring-muted-foreground/30",
+            ? "feature-card-live bg-gradient-to-br from-card/90 via-card to-primary/10 ring-primary/25 shadow-[0_12px_40px_-12px_rgba(2,132,199,0.35)] hover:-translate-y-1.5 hover:ring-primary/50 hover:shadow-[0_24px_56px_-16px_rgba(2,132,199,0.45)]"
+            : "feature-card-roadmap bg-card/30 ring-border/50 ring-dashed hover:-translate-y-0.5 hover:bg-card/50 hover:ring-muted-foreground/30",
         )}
       >
         <div
@@ -87,7 +87,10 @@ function ModuleCard({
         />
 
         <div
-          className="pointer-events-none absolute bottom-0 left-0 h-px w-0 bg-gradient-to-r from-primary/80 to-transparent transition-all duration-700 group-hover:w-full"
+          className={cn(
+            "pointer-events-none absolute bottom-0 left-0 h-px bg-gradient-to-r from-primary/80 to-transparent transition-all duration-700 group-hover:w-full",
+            isLive ? "feature-card-live-accent" : "w-0",
+          )}
           aria-hidden
         />
 
@@ -104,7 +107,7 @@ function ModuleCard({
                 className={cn(
                   "relative flex h-11 w-11 items-center justify-center rounded-xl ring-1 transition duration-500 group-hover:rotate-3 group-hover:scale-110",
                   isLive
-                    ? "bg-primary/15 ring-primary/40"
+                    ? "feature-icon-live bg-primary/15 ring-primary/40"
                     : "bg-muted/40 ring-border",
                 )}
               >
@@ -202,7 +205,7 @@ export function FeaturesSection() {
             visible && "is-visible",
           )}
         >
-          <p className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-primary ring-1 ring-primary/20">
+          <p className="features-pipeline-badge inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-primary ring-1 ring-primary/20">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-50" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
@@ -225,7 +228,7 @@ export function FeaturesSection() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <span
               className={cn(
-                "features-stat-pop rounded-xl bg-primary/10 px-4 py-2 font-mono text-sm text-primary ring-1 ring-primary/25",
+                "features-stat-pop features-stat-glow rounded-xl bg-primary/10 px-4 py-2 font-mono text-sm text-primary ring-1 ring-primary/25",
                 visible && "is-visible",
               )}
               style={visible ? { animationDelay: "200ms" } : undefined}
@@ -278,7 +281,7 @@ export function FeaturesSection() {
               02 · Proximos modulos
             </span>
             <div
-              className="h-px flex-1 border-t border-dashed border-border/60"
+              className="features-roadmap-line h-px flex-1 border-t border-dashed border-border/60"
               aria-hidden
             />
           </div>
