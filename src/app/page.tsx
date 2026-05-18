@@ -43,9 +43,9 @@ export default function HomePage() {
   return (
     <>
       <JsonLd data={websiteOrganizationJsonLd()} />
-      <div className="min-h-dvh bg-background">
+      <div className="min-h-dvh min-w-0 overflow-x-hidden bg-background">
         <SiteHeader />
-        <main>
+        <main className="min-w-0 overflow-x-hidden">
           <LandingHero />
           <FeaturesSection />
           <BlogPreviewSection />

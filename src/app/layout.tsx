@@ -92,9 +92,9 @@ export default function RootLayout({
     <html
       lang="es"
       suppressHydrationWarning
-      className={`${plusJakartaSans.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      className={`${plusJakartaSans.variable} ${ibmPlexMono.variable} h-full overflow-x-hidden antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
+      <body className="flex min-h-full min-w-0 flex-col overflow-x-hidden bg-background font-sans text-foreground">
         <ClerkProvider dynamic>
           <ThemeProvider>
             <ConvexClerkProvider>{children}</ConvexClerkProvider>
