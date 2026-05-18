@@ -66,7 +66,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <Link href="/" className="group flex min-h-11 shrink-0 items-center gap-3 rounded-lg py-1 pr-2 outline-none ring-offset-background focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-offset-2">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted p-1">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl">
             <PassiveSentinelLogo />
           </span>
           <span className="flex flex-col leading-tight">
