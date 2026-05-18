@@ -88,10 +88,10 @@ export function ChecklistColumn({
           {rows.map((row) => (
             <li
               key={row.id}
-              className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 ${statusStyles(row.status)}`}
+                  className={`flex w-full items-start gap-3 rounded-lg border px-3 py-2.5 ${statusStyles(row.status)}`}
             >
               <span
-                className={`mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${badgeClasses(row.status)}`}
+                className={`mt-0.5 w-20 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-center whitespace-nowrap ${badgeClasses(row.status)}`}
               >
                 {statusLabel(row.status)}
               </span>
@@ -121,7 +121,7 @@ export function ChecklistColumn({
           {info.map((finding) => (
             <li
               key={finding.id}
-              className="rounded-lg border border-border bg-muted/30 p-3"
+              className="w-full rounded-lg border border-border bg-muted/30 p-3"
             >
               <p className="font-mono text-[10px] uppercase text-muted-foreground">
                 {finding.module}

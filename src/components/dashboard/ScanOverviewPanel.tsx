@@ -73,7 +73,7 @@ export function ScanOverviewPanel({
   const topRisks = riskFindings(findings).slice(0, 4);
 
   return (
-    <div className="space-y-8 p-5">
+    <div className="space-y-8 px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
       <div className="rounded-2xl border border-border bg-card/60 px-5 py-4 shadow-sm backdrop-blur-sm">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Objetivo escaneado
@@ -135,10 +135,13 @@ export function ScanOverviewPanel({
         </div>
       ) : null}
 
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" role="list">
-        <li>
-          <Card className="border-border bg-card shadow-sm">
-            <CardContent className="flex flex-col gap-1 p-4">
+      <ul
+        className="grid gap-4 auto-rows-fr items-stretch sm:grid-cols-2 lg:grid-cols-4"
+        role="list"
+      >
+        <li className="h-full">
+          <Card className="h-full border-border bg-card shadow-sm">
+            <CardContent className="flex h-full flex-col gap-1 p-4">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Hostnames (huella observable)
               </span>
@@ -151,9 +154,9 @@ export function ScanOverviewPanel({
             </CardContent>
           </Card>
         </li>
-        <li>
-          <Card className="border-border bg-card shadow-sm">
-            <CardContent className="flex flex-col gap-1 p-4">
+        <li className="h-full">
+          <Card className="h-full border-border bg-card shadow-sm">
+            <CardContent className="flex h-full flex-col gap-1 p-4">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Hallazgos críticos
               </span>
@@ -166,9 +169,9 @@ export function ScanOverviewPanel({
             </CardContent>
           </Card>
         </li>
-        <li>
-          <Card className="border-border bg-card shadow-sm">
-            <CardContent className="flex flex-col gap-1 p-4">
+        <li className="h-full">
+          <Card className="h-full border-border bg-card shadow-sm">
+            <CardContent className="flex h-full flex-col gap-1 p-4">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Hallazgos medios
               </span>
@@ -181,9 +184,9 @@ export function ScanOverviewPanel({
             </CardContent>
           </Card>
         </li>
-        <li>
-          <Card className="border-border bg-card shadow-sm">
-            <CardContent className="flex flex-col gap-1 p-4">
+        <li className="h-full">
+          <Card className="h-full border-border bg-card shadow-sm">
+            <CardContent className="flex h-full flex-col gap-1 p-4">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Módulos OK
               </span>
