@@ -23,6 +23,8 @@ Document HTTP APIs used by the dashboard and integrations. Canonical **module li
 ## Known gaps (**reconcile regularly**)
 
 - **`POST /api/scan`** has **no enforced rate limit** in route code today — abuse risk called out in [threat model](threat-model.md) and [product hub §10](defacc-alignment-and-scoring-plan.md#10-risks-and-mitigations).
+- **`POST /api/ai/insights`** and **`POST /api/ai/chat`** require Clerk session but **no rate limit** is implemented in the route yet.
+- **Deep scan ownership verification** is specified in [prd-domain-ownership-verification.md](prd-domain-ownership-verification.md) but **not implemented** yet (future `403 OWNERSHIP_REQUIRED`).
 
 Base URL in local development: `http://localhost:3000`.
 
@@ -197,76 +199,59 @@ Implemented in [`src/lib/recon/normalize-target.ts`](../src/lib/recon/normalize-
 
 ## `POST /api/ai/insights`
 
-Generates **structured** defensive insights (executive summary, prioritized actions, per-finding snippets) from a minimal scan snapshot. Implemented in [`src/app/api/ai/insights/route.ts`](../src/app/api/ai/insights/route.ts).
+Genera el JSON estructurado de IA (`AiInsightsResponseBody`) a partir de una instantánea mínima del escaneo. Implementado en [`src/app/api/ai/insights/route.ts`](../src/app/api/ai/insights/route.ts) (Node.js).
+
+### Auth
+
+- **Requiere sesión Clerk** (cookie). Sin sesión: **`401`** con mensaje en español.
+
+### Caché (Convex)
+
+- Busca primero en `aiInsightsCache` por `normalizedTarget` (TTL 24h). La clave **no incluye** `mode`; quick y deep comparten la misma fila si el objetivo coincide.
+- Para forzar llamada al modelo: envía `"forceRefresh": true` en el cuerpo.
+- Escritura en caché usa `INSIGHTS_CACHE_WRITE_SECRET` en Convex y Next (ver `.env.example`).
+
+### Persistencia de IA en `scans` (opcional)
+
+- Si el cliente envía `"convexScanId"` (id devuelto por la mutación `scans.createScan` tras un escaneo con sesión), el servidor intenta `updateScanInsights` con el JWT del usuario.
 
 ### Request
 
-Same snapshot fields as used by the dashboard (see [`AiInsightsRequestBody`](../src/types/ai-insights.ts)): `normalizedTarget`, `inputKind`, `scanMode`, hostname counts, `findings[]`, `modules[]`, optional `checklistRows[]`. **No bulk hostname lists** are sent to the model.
-
-### Responses
-
-- **`200`** — `AiInsightsResponseBody` (JSON).
-- **`400`** — invalid body.
-- **`502`** / **`503`** — model or configuration errors.
-
----
-
-## `POST /api/ai/chat`
-
-**Follow-up conversational layer** grounded in the **current scan snapshot** and optional prior structured insights. Requires **Clerk sign-in**. Implemented in [`src/app/api/ai/chat/route.ts`](../src/app/api/ai/chat/route.ts).
-
-### Auth and limits
-
-| Rule | Value |
-|------|--------|
-| Authentication | **Required** (`401` if unsigned) |
-| Prior insights | **Required** — client must send `priorInsights` from a successful insights generation |
-| Rate limit | **40 requests / hour / user** (in-memory per instance; `429` with `Retry-After`) |
-| Max user turns / session | **10** (client-enforced; server validates message list) |
-| Max message length | **2000** characters |
-
-### Request body
+**Body (JSON)** — además de los campos anteriores:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `scanSnapshot` | `AiInsightsRequestBody` | Yes | Same minimal snapshot as insights |
-| `priorInsights` | `AiInsightsResponseBody` | Yes | Last successful structured insights |
-| `messages` | `{ role: "user" \| "assistant", content: string }[]` | Yes | Conversation thread; **last message must be `user`** |
+| `convexScanId` | `string` | No | Id de documento `scans` para guardar IA en Convex. |
+| `forceRefresh` | `boolean` | No | Omite caché y vuelve a llamar al modelo. |
 
-**Example**
+Respuesta exitosa puede incluir `servedFromCache: true` y `modelUsed`.
 
-```json
-{
-  "scanSnapshot": { "normalizedTarget": "example.com", "inputKind": "domain", "scanMode": "deep", "totalHostnames": 12, "hostnameSampleShownCount": 12, "findings": [], "modules": [] },
-  "priorInsights": { "executiveSummary": "…", "topActions": [], "disclaimers": ["…"], "perFindingInsightsById": {} },
-  "messages": [
-    { "role": "user", "content": "¿Qué debería verificar primero?" }
-  ]
-}
-```
+## `POST /api/ai/chat`
+
+Chat de refinamiento **posterior** a haber obtenido insights estructurados. Implementado en [`src/app/api/ai/chat/route.ts`](../src/app/api/ai/chat/route.ts).
+
+### Auth
+
+- **Requiere sesión Clerk**. Sin sesión: **`401`**.
+
+### Request
+
+**Body (JSON)**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `scanSnapshot` | objeto | Sí | Misma forma mínima que el cuerpo de insights (`normalizedTarget`, `inputKind`, `scanMode`, `totalHostnames`, `hostnameSampleShownCount`, `findings[]`, `modules[]`, `checklistRows` opcional). |
+| `priorInsights` | objeto | Sí | Resultado JSON previo de `POST /api/ai/insights` (`executiveSummary`, `topActions`, `disclaimers`, `perFindingInsightsById`, …). |
+| `messages` | array | Sí | `{ "role": "user" \| "assistant", "content": string }[]` — debe existir al menos un mensaje `user` con contenido no vacío (la última pregunta). |
 
 ### Response — `200 OK`
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `reply` | `string` | Assistant answer (Spanish by default) |
-| `citedFindingIds` | `string[]` (optional) | Finding ids referenced |
-| `citedChecklistIds` | `string[]` (optional) | Checklist row ids referenced |
-| `disclaimers` | `string[]` (optional) | Passive-scan caveats when relevant |
-| `modelUsed` | `string` (optional) | OpenRouter model slug |
+JSON: `{ "reply": string, "citedFindingIds"?: string[], "disclaimers"?: string[], "modelUsed"?: string }` (texto modelo en **español**).
 
-### Errors
+### Notas
 
-| Status | When |
-|--------|------|
-| `401` | Not signed in |
-| `400` | Invalid body, or missing `priorInsights` |
-| `429` | Rate limit exceeded |
-| `502` / `503` | Model / `OPENROUTER_API_KEY` errors |
-
-Spec: [AI chat refinement PRD](ai-chat-refinement-prd.md).
-
----
+- **No hay caché** de turnos de chat en MVP ([ai-chat-refinement-prd](ai-chat-refinement-prd.md)).
+- La UI aún puede no estar cableada; el contrato HTTP queda listo para integración.
 
 ## Related
 

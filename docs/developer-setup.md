@@ -56,6 +56,24 @@ src/
   types/scan.ts        # ScanFinding, ScanModuleResult, ScanResponseBody
 ```
 
+## Convex (opcional pero recomendado)
+
+1. Crea un deployment en [Convex](https://dashboard.convex.dev) y define `NEXT_PUBLIC_CONVEX_URL` en `.env.local`.
+2. Configura **Clerk → JWT template “convex”** y `CLERK_JWT_ISSUER_DOMAIN` / variables de Convex según [convex/auth.config.ts](../convex/auth.config.ts).
+3. Sincroniza secretos compartidos en el dashboard de Convex:
+   - `INSIGHTS_CACHE_WRITE_SECRET` (escrituras de caché de IA desde Next).
+   - Opcional — **solo desarrollo / entorno local**: `DEV_DATA_RESET_SECRET` para la mutación `dev:clearAllTablesForDev` (borra tablas `scans` y `aiInsightsCache`).
+
+### Borrar datos en desarrollo (local)
+
+Con `npx convex dev` o `npx convex deploy` según tu flujo:
+
+```bash
+npx convex run dev:clearAllTablesForDev '{"secret":"<DEV_DATA_RESET_SECRET>"}'
+```
+
+Úsalo **solo en dev** cuando cambies el esquema y quieras empezar limpio. No compartas el secreto ni lo reutilices en producción sin proceso operacional claro.
+
 ## Lint & build
 
 ```bash

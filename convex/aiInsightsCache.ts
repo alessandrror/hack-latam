@@ -3,6 +3,8 @@ import { v } from "convex/values";
 
 const TWENTY_FOUR_H_MS = 24 * 60 * 60 * 1000;
 
+/** Lectura por `normalizedTarget` únicamente: quick y deep comparten caché si el host coincide. */
+
 /**
  * Validates writes from trusted server (Next.js route). Set INSIGHTS_CACHE_WRITE_SECRET
  * in Convex Dashboard to the same value as in Next.js `.env.local`.

@@ -1,3 +1,4 @@
+import type { AiInsightsResponseBody } from "@/types/ai-insights";
 import type { ScanMode, ScanResponseBody } from "@/types/scan";
 
 export const SCAN_SESSION_HISTORY_KEY = "hack-latam.scanSession.v1";
@@ -10,6 +11,8 @@ export type ScanSessionHistoryEntry = {
   inputTarget: string;
   mode: ScanMode;
   result: ScanResponseBody;
+  /** Present when loaded from Convex `scans` with saved IA. */
+  aiInsights?: AiInsightsResponseBody | null;
 };
 
 type PersistedShape = {

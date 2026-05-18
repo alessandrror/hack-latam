@@ -5,13 +5,18 @@ import type {
   AiInsightsTopAction,
   AiInsightsConfidence,
 } from "@/types/ai-insights";
-import { DEFENSIVE_ADVISOR_RULES, getScanModeContextBlock } from "./defensive-rules";
 
-const INSIGHTS_JSON_SHAPE = `Output MUST be valid JSON only, no markdown fences, no commentary before or after the JSON object.
-- Use the finding ids exactly as provided in input for keys in perFindingInsightsById and relatedFindingIds.
-- For checklistRowInsightsById use these keys when relevant: check-spf, check-dmarc, check-dkim, check-caa, check-cert, check-tls-versions (omit unknown keys).
+const SYSTEM_PROMPT = `Eres un asesor de ciberseguridad defensiva para responsables de PYME que revisan resultados de reconocimiento pasivo.
 
-JSON shape:
+Reglas:
+- Solo remediación y verificación defensiva. Nunca explotación, intrusión, phishing, acoso, evasión ni acceso no autorizado.
+- No afirmes cobertura total: estas comprobaciones son pasivas e incompletas.
+- La salida DEBE ser solo JSON válido, sin bloques markdown, sin texto antes ni después del objeto JSON.
+- Usa exactamente los ids de hallazgos del input como claves en perFindingInsightsById y en relatedFindingIds.
+- Para checklistRowInsightsById usa solo claves relevantes: check-spf, check-dmarc, check-dkim, check-caa, check-cert, check-tls-versions (omite claves desconocidas).
+- Todos los textos para la operadora (executiveSummary, títulos, why, verifyStep, disclaimers, meaning) deben estar en español.
+
+Forma JSON:
 {
   "executiveSummary": string,
   "topActions": array of { "id": string, "priority": "critical"|"medium"|"low", "title": string, "why": string, "verifyStep": string, "confidence": "high"|"medium"|"low", "relatedFindingIds": string[] optional },
@@ -29,31 +34,39 @@ export function buildUserPrompt(context: AiInsightsRequestBody): string {
       totalHostnamesReported: context.totalHostnames,
       hostnameSampleShownCount: context.hostnameSampleShownCount,
       note:
-        "Do not enumerate or guess individual hostnames; only refer to totals if useful.",
+        "No enumeres ni inventes hostnames individuales; solo usa totales si aporta valor.",
     },
     modules: context.modules,
     checklistRows: context.checklistRows ?? [],
     findings: context.findings,
   };
 
-  return `Analyze the following passive scan snapshot and produce the JSON object described in your instructions.
+  return `Analiza la siguiente instantánea de escaneo pasivo y produce el objeto JSON descrito en tus instrucciones.
 
 INPUT_JSON:
 ${JSON.stringify(payload)}`;
 }
 
 export function getInsightsSystemPrompt(
-  scanMode: "deep" | "quick" = "deep",
+  scanMode: "deep" | "quick" = "deep"
 ): string {
-  return `${DEFENSIVE_ADVISOR_RULES}
-${getScanModeContextBlock(scanMode)}
+  const modeBlock =
+    scanMode === "quick"
+      ? `
 
-${INSIGHTS_JSON_SHAPE}`;
+Contexto de modo (debe influir en el tono de executiveSummary):
+- Escaneo RÁPIDO: se omitió enumeración CT de subdominios, los hallazgos de severidad baja se filtraron en el servidor y el checklist puede estar incompleto.
+- No impliques inventario completo de superficie de ataque ni cobertura de subdominios. Puedes describirlo como un paso prioritario y más rápido.`
+      : `
+
+Contexto de modo (debe influir en el tono de executiveSummary):
+- Escaneo PROFUNDO: se ejecutaron todos los módulos pasivos y pueden aparecer checklist y señales de severidad baja salvo fallos de módulos.
+- Puedes describirlo como una instantánea pasiva más amplia (no exhaustiva).`;
+
+  return SYSTEM_PROMPT + modeBlock;
 }
 
-function isSeverityLike(
-  s: unknown,
-): s is AiInsightsTopAction["priority"] {
+function isSeverityLike(s: unknown): s is AiInsightsTopAction["priority"] {
   return s === "critical" || s === "medium" || s === "low";
 }
 
@@ -61,9 +74,7 @@ function isConfidenceLike(s: unknown): s is AiInsightsConfidence {
   return s === "high" || s === "medium" || s === "low";
 }
 
-function parsePerFindingInsights(
-  raw: unknown,
-): Record<string, AiPerFindingInsight> {
+function parsePerFindingInsights(raw: unknown): Record<string, AiPerFindingInsight> {
   const out: Record<string, AiPerFindingInsight> = {};
   if (!raw || typeof raw !== "object") return out;
   for (const [key, val] of Object.entries(raw)) {
@@ -162,8 +173,8 @@ export function parseInsightsModelOutput(text: string): AiInsightsResponseBody {
 
   if (disclaimers.length === 0) {
     disclaimers = [
-      "These insights are informational and incomplete; passive scans cannot prove absence of issues.",
-      "Verify all items in your own environment with authorized personnel.",
+      "Estas orientaciones son informativas e incompletas; los escaneos pasivos no prueban la ausencia de problemas.",
+      "Verifica cada punto en tu propio entorno con personal autorizado.",
     ];
   }
 
