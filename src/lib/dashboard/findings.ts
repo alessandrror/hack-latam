@@ -68,11 +68,11 @@ function caaChecklistRow(findings: ScanFinding[]): ChecklistRow | null {
   const present = (f.metadata as { caaPresent?: boolean }).caaPresent === true;
   return {
     id: "check-caa",
-    label: "CAA (certificate issuance)",
+    label: "CAA (emisión de certificados)",
     status: present ? "pass" : "warn",
     detail: present
-      ? "CAA record(s) published"
-      : "No CAA records — optional hardening control",
+      ? "Se publicaron registros CAA"
+      : "No hay registros CAA — refuerzo opcional",
   };
 }
 
@@ -86,27 +86,32 @@ function tlsVersionsChecklistRow(findings: ScanFinding[]): ChecklistRow | null {
       : null;
   const legacy = meta?.legacyTlsEnabled === true;
 
-  if (f.severity === "medium" && f.title.includes("did not complete")) {
+  // When probes didn't negotiate successfully, the recon module omits
+  // `supportedProtocols`/`legacyTlsEnabled` in metadata.
+  if (
+    f.severity === "medium" &&
+    (!meta || typeof (f.metadata as { supportedProtocols?: unknown }).supportedProtocols === "undefined")
+  ) {
     return {
       id: "check-tls-versions",
-      label: "TLS protocol versions (deep)",
+      label: "Versiones de protocolo TLS (deep)",
       status: "warn",
-      detail: "Probes could not finish — see finding",
+      detail: "No se pudieron completar las sondas — ver el hallazgo",
     };
   }
   if (legacy) {
     return {
       id: "check-tls-versions",
-      label: "TLS protocol versions (deep)",
+      label: "Versiones de protocolo TLS (deep)",
       status: "fail",
-      detail: "TLS 1.0 or 1.1 accepted on a probe",
+      detail: "Se aceptó TLS 1.0 o 1.1 en una sonda",
     };
   }
   return {
     id: "check-tls-versions",
-    label: "TLS protocol versions (deep)",
+    label: "Versiones de protocolo TLS (deep)",
     status: "pass",
-    detail: "No TLS 1.0/1.1 observed on isolated probes",
+    detail: "No se observó TLS 1.0/1.1 en sondas aisladas",
   };
 }
 
@@ -124,27 +129,28 @@ function tlsCertChecklist(findings: ScanFinding[]): ChecklistRow | null {
     if (expiry.severity === "critical") {
       return {
         id: "check-cert",
-        label: "HTTPS certificate",
+        label: "Certificado HTTPS",
         status: "fail",
         detail:
           days !== null && days < 0
-            ? "Certificate expired"
+            ? "Certificado expirado"
             : expiry.title,
       };
     }
     if (expiry.severity === "medium") {
       return {
         id: "check-cert",
-        label: "HTTPS certificate",
+        label: "Certificado HTTPS",
         status: "warn",
-        detail: days !== null ? `${days} day(s) until expiry` : expiry.title,
+        detail:
+          days !== null ? `${days} día(s) hasta la expiración` : expiry.title,
       };
     }
     return {
       id: "check-cert",
-      label: "HTTPS certificate",
+      label: "Certificado HTTPS",
       status: "pass",
-      detail: days !== null ? `${days} day(s) remaining` : undefined,
+      detail: days !== null ? `${days} día(s) restantes` : undefined,
     };
   }
 
@@ -152,17 +158,17 @@ function tlsCertChecklist(findings: ScanFinding[]): ChecklistRow | null {
   if (noCert) {
     return {
       id: "check-cert",
-      label: "HTTPS certificate",
+      label: "Certificado HTTPS",
       status: "fail",
-      detail: "No certificate read",
+      detail: "No se pudo leer un certificado",
     };
   }
 
   return {
     id: "check-cert",
-    label: "HTTPS certificate",
+    label: "Certificado HTTPS",
     status: "warn",
-    detail: "Could not summarize certificate",
+    detail: "No se pudo resumir el certificado",
   };
 }
 
@@ -181,9 +187,9 @@ export function buildChecklistRows(findings: ScanFinding[]): ChecklistRow[] {
     const present = (spf.metadata as { present?: boolean }).present === true;
     rows.push({
       id: "check-spf",
-      label: "SPF (email)",
+      label: "SPF (correo)",
       status: present ? "pass" : "fail",
-      detail: present ? "Record present" : "No SPF TXT record",
+      detail: present ? "Registro presente" : "No hay registro TXT SPF",
     });
   }
 
@@ -203,7 +209,7 @@ export function buildChecklistRows(findings: ScanFinding[]): ChecklistRow[] {
       id: "check-dmarc",
       label: "DMARC",
       status: present ? "pass" : "fail",
-      detail: present ? summary ?? "_dmarc record" : "No DMARC at _dmarc",
+      detail: present ? summary ?? "Registro en _dmarc" : "No hay DMARC en _dmarc",
     });
   }
 
@@ -217,11 +223,11 @@ export function buildChecklistRows(findings: ScanFinding[]): ChecklistRow[] {
       (dkim.metadata as { detected?: boolean }).detected === true;
     rows.push({
       id: "check-dkim",
-      label: "DKIM (common selectors)",
+      label: "DKIM (selectores comunes)",
       status: detected ? "pass" : "warn",
       detail: detected
-        ? "Keys found for common selector names"
-        : "Not detected on sampled selectors",
+        ? "Se encontraron claves para selectores comunes"
+        : "No se detectó en selectores muestreados",
     });
   }
 

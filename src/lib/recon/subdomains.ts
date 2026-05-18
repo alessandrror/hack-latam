@@ -17,12 +17,12 @@ function severityForSubdomainCount(count: number): "medium" | "low" {
 
 function explanationForCount(count: number): string {
   if (count === 0) {
-    return "No extra hostnames showed up in public certificate logs for this domain — fewer exposed names can mean a smaller footprint (not a guarantee every asset is gone).";
+    return "No aparecieron nombres de host adicionales en los registros públicos de certificados para este dominio; menos nombres expuestos pueden indicar una huella menor (no es una garantía de que todos los activos hayan desaparecido).";
   }
   if (count > 50) {
-    return "There are many hostnames tied to this brand in certificate transparency logs — each name can be another place attackers probe for weak configs.";
+    return "Hay muchos nombres de host asociados a esta marca en los registros de transparencia de certificados; cada nombre puede ser otro lugar donde los atacantes prueban configuraciones débiles.";
   }
-  return "Certificate transparency logs list several hostnames for this domain — more names usually means more places to keep patched and monitored.";
+  return "Los registros de transparencia de certificados listan varios nombres de host para este dominio; normalmente, a más nombres, más lugares para mantener parcheados y monitoreados.";
 }
 
 /**
@@ -109,8 +109,8 @@ export async function enumerateSubdomainsFromCrtSh(
     severity,
     title:
       sorted.length === 0
-        ? "No subdomains found in certificate transparency (crt.sh)"
-        : `${sorted.length} hostname(s) found via certificate transparency`,
+        ? "No se encontraron subdominios en la transparencia de certificados (crt.sh)"
+        : `${sorted.length} nombre(s) de host encontrados vía transparencia de certificados`,
     explanation,
     metadata: {
       source: "crt.sh",

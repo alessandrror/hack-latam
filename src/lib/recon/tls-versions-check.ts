@@ -95,9 +95,9 @@ export async function collectTlsVersionFindings(
         id: `tls-versions-${trimmed}`,
         module: "tls_versions",
         severity: "medium",
-        title: "TLS version probes did not complete",
+        title: "Las sondas de versiones TLS no se completaron",
         explanation:
-          "None of the isolated TLS handshakes succeeded — the host may rate-limit parallel checks, require a different TLS edge, or be temporarily unreachable. Compare with the basic TLS certificate module.",
+          "Ninguno de los handshakes aislados TLS se completó con éxito; el host podría limitar verificaciones en paralelo, requerir otro edge TLS o estar temporalmente inaccesible. Compáralo con el módulo básico de certificado TLS.",
         metadata: { hostname: trimmed, probes },
       },
     ];
@@ -110,12 +110,12 @@ export async function collectTlsVersionFindings(
 
   const severity = legacyEnabled ? "medium" : "low";
   const title = legacyEnabled
-    ? "Legacy TLS protocols (1.0 / 1.1) appear enabled"
-    : "TLS protocol versions look modern on isolated probes";
+    ? "Protocolos TLS heredados (1.0 / 1.1) parecen estar habilitados"
+    : "Las versiones TLS parecen modernas en sondas aisladas";
 
   const explanation = legacyEnabled
-    ? "The server accepted TLS 1.0 or 1.1 on at least one handshake — browsers and regulators increasingly treat these as weak. Disable legacy TLS and prefer TLS 1.2+."
-    : "Isolated probes did not negotiate TLS 1.0 or 1.1. This is a good sign, but does not guarantee cipher suite quality or cover all edge frontends.";
+    ? "El servidor aceptó TLS 1.0 o 1.1 en al menos un handshake; cada vez más navegadores y reguladores los tratan como débiles. Deshabilita TLS heredado y prefiere TLS 1.2 o superior."
+    : "Las sondas aisladas no negociaron TLS 1.0 ni 1.1. Es una buena señal, pero no garantiza la calidad de las suites de cifrado ni cubre todos los frontends de borde.";
 
   const finding: ScanFinding = {
     id: `tls-versions-${trimmed}`,

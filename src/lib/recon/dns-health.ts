@@ -71,11 +71,11 @@ export async function collectDnsHealthFindings(
     module: "dns_health",
     severity: spfPresent ? "low" : "medium",
     title: spfPresent
-      ? "SPF record found for email authentication"
-      : "No SPF record found for this domain",
+      ? "Se encontró un registro SPF para la autenticación de correo"
+      : "No se encontró un registro SPF para este dominio",
     explanation: spfPresent
-      ? "SPF tells receiving mail servers which servers may send mail for your domain — having one reduces spoofing risk."
-      : "Without SPF, it is easier for attackers to forge emails that look like they came from your domain — adding an SPF TXT record is a basic safeguard.",
+      ? "SPF le indica a los servidores receptores qué servidores pueden enviar correo para tu dominio; tenerlo reduce el riesgo de suplantación."
+      : "Sin SPF, es más fácil que un atacante falsifique correos que parezcan enviados desde tu dominio; añadir un registro TXT de SPF es una salvaguarda básica.",
     metadata: {
       check: "spf",
       present: spfPresent,
@@ -94,11 +94,11 @@ export async function collectDnsHealthFindings(
     module: "dns_health",
     severity: dmarcPresent ? "low" : "medium",
     title: dmarcPresent
-      ? "DMARC policy published"
-      : "No DMARC record found",
+      ? "Se publicó una política DMARC"
+      : "No se encontró un registro DMARC",
     explanation: dmarcPresent
-      ? `DMARC builds on SPF/DKIM and tells receivers how to handle suspicious mail (${dmarcSummary ?? "see DNS"}).`
-      : "DMARC helps prevent phishing using your domain name — publishing a DMARC record at _dmarc is strongly recommended.",
+      ? `DMARC se apoya en SPF/DKIM y le indica a los receptores cómo tratar el correo sospechoso (${dmarcSummary ?? "ver DNS"}).`
+      : "DMARC ayuda a prevenir el phishing usando tu nombre de dominio; publicar un registro DMARC en _dmarc está fuertemente recomendado.",
     metadata: {
       check: "dmarc",
       present: dmarcPresent,
@@ -124,11 +124,13 @@ export async function collectDnsHealthFindings(
     module: "dns_health",
     severity: "low",
     title: dkimFound
-      ? "DKIM signing appears configured (common selectors)"
-      : "DKIM not detected via common selectors",
+      ? "La firma DKIM parece estar configurada (selectores comunes)"
+      : "No se detectó DKIM mediante selectores comunes",
     explanation: dkimFound
-      ? `Public DNS shows DKIM keys under selector(s): ${dkimSelectorsHit.slice(0, 5).join(", ")}${dkimSelectorsHit.length > 5 ? ", …" : ""} — signed mail helps prove messages are authentic.`
-      : "We did not find DKIM TXT records under a short list of common selectors — your provider may use a different selector, so absence here is not definitive.",
+      ? `El DNS público muestra claves DKIM en el/los selector(es): ${dkimSelectorsHit.slice(0, 5).join(", ")}${
+          dkimSelectorsHit.length > 5 ? ", …" : ""
+        } — el correo firmado ayuda a demostrar que los mensajes son auténticos.`
+      : "No encontramos registros TXT de DKIM bajo una lista corta de selectores comunes; tu proveedor podría usar otros selectores, así que la ausencia aquí no es concluyente.",
     metadata: {
       check: "dkim",
       selectorsChecked: COMMON_DKIM_SELECTORS,

@@ -58,9 +58,9 @@ function collectTlsFindingsSync(
       id: `tls-check-no-cert-${hostname}`,
       module: "tls_check",
       severity: "medium",
-      title: "Could not read a TLS certificate",
+      title: "No se pudo leer un certificado TLS",
       explanation:
-        "The server did not present a usable leaf certificate during the handshake — check that HTTPS is configured correctly.",
+        "El servidor no presentó un certificado hoja utilizable durante el handshake; verifica que HTTPS esté configurado correctamente.",
       metadata: { hostname },
     });
     return findings;
@@ -75,9 +75,9 @@ function collectTlsFindingsSync(
       id: `tls-check-dates-${hostname}`,
       module: "tls_check",
       severity: "low",
-      title: "Certificate date information unclear",
+      title: "La información de fechas del certificado no está clara",
       explanation:
-        "We connected over TLS but could not reliably read validity dates — review the certificate in your hosting panel.",
+        "Se conectó por TLS, pero no fue posible leer con fiabilidad las fechas de validez; revisa el certificado en el panel de tu hosting.",
       metadata: { hostname },
     });
     return findings;
@@ -92,29 +92,29 @@ function collectTlsFindingsSync(
 
   if (Number.isNaN(validTo)) {
     expirySeverity = "low";
-    expiryTitle = "Certificate expiry could not be parsed";
+    expiryTitle = "No se pudo interpretar la expiración del certificado";
     expiryExplanation =
-      "Verify manually that your HTTPS certificate is valid and renewed on schedule.";
+      "Verifica manualmente que tu certificado HTTPS es válido y se renueva a tiempo.";
   } else if (daysLeft < 0) {
     expirySeverity = "critical";
-    expiryTitle = "TLS certificate appears expired";
+    expiryTitle = "El certificado TLS parece estar expirado";
     expiryExplanation =
-      "Browsers and clients may block or warn users — renew the certificate as soon as possible.";
+      "Los navegadores y clientes podrían bloquear o alertar a los usuarios; renueva el certificado cuanto antes.";
   } else if (daysLeft <= 14) {
     expirySeverity = "medium";
-    expiryTitle = `TLS certificate expires in ${daysLeft} day(s)`;
+    expiryTitle = `El certificado TLS expira en ${daysLeft} día(s)`;
     expiryExplanation =
-      "Plan renewal soon so visitors do not see security warnings.";
+      "Planifica la renovación pronto para que los visitantes no vean avisos de seguridad.";
   } else if (daysLeft <= 30) {
     expirySeverity = "medium";
-    expiryTitle = `TLS certificate expires in ${daysLeft} day(s)`;
+    expiryTitle = `El certificado TLS expira en ${daysLeft} día(s)`;
     expiryExplanation =
-      "Renew before expiry to avoid downtime or browser warnings.";
+      "Renueva antes de la expiración para evitar caídas o avisos del navegador.";
   } else {
     expirySeverity = "low";
-    expiryTitle = `TLS certificate valid — expires in ${daysLeft} day(s)`;
+    expiryTitle = `Certificado TLS válido — expira en ${daysLeft} día(s)`;
     expiryExplanation =
-      "The site presented a certificate with a normal validity window — keep auto-renewal enabled.";
+      "El sitio presentó un certificado con un rango de validez normal; mantén activada la renovación automática.";
   }
 
   const issuerO = leaf.issuer?.O;
@@ -150,9 +150,9 @@ function collectTlsFindingsSync(
       id: `tls-check-names-${hostname}`,
       module: "tls_check",
       severity: "medium",
-      title: "Certificate may not match this hostname",
+      title: "El certificado podría no coincidir con este nombre de host",
       explanation:
-        "The certificate's names do not obviously include this hostname — users may see warnings unless another certificate is served via SNI.",
+        "Los nombres del certificado no incluyen de forma obvia este hostname; los usuarios podrían ver avisos si no se sirve otro certificado mediante SNI.",
       metadata: { hostname },
     });
   }
@@ -162,8 +162,8 @@ function collectTlsFindingsSync(
       id: `tls-check-chain-${hostname}`,
       module: "tls_check",
       severity: "medium",
-      title: "TLS chain validation reported an issue",
-      explanation: `Handshake completed but certificate verification reported: ${authError.message}. Visitors using strict checks may still see warnings — confirm the full chain is installed.`,
+      title: "La validación de la cadena TLS reportó un problema",
+      explanation: `Se completó el handshake, pero la verificación del certificado reportó: ${authError.message}. Los visitantes con comprobaciones estrictas podrían seguir viendo avisos; confirma que la cadena completa está instalada.`,
       metadata: { hostname },
     });
   }

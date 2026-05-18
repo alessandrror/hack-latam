@@ -40,14 +40,14 @@ export async function collectDnsCaaFindings(domain: string): Promise<ScanFinding
 
   const severity = "low" as const;
   const title = caaPresent
-    ? "CAA records published for certificate issuance control"
-    : "No CAA records found";
+    ? "Se publicaron registros CAA para controlar la emisión de certificados"
+    : "No se encontraron registros CAA";
 
   const explanation = caaPresent
     ? hasRules
-      ? "CAA tells public CAs which authorities may issue certificates for your domain — reduces risk of mis-issued certs if DNS is protected."
-      : "CAA-style records were returned but tagged fields were empty in the resolver view — verify with your DNS admin that intended issue/issuewild values are set."
-    : "Without CAA, any CA that can validate control may issue for this name (subject to normal CA rules). Adding CAA is optional hardening for many SMBs.";
+      ? "CAA le indica a las CA públicas qué autoridades pueden emitir certificados para tu dominio; reduce el riesgo de certificados mal emitidos si el DNS está protegido."
+      : "Se devolvieron registros con formato CAA, pero los campos etiquetados estaban vacíos en la vista del resolvedor. Verifica con tu administrador DNS que se configuraron los valores issue/issuewild previstos."
+    : "Sin CAA, cualquier CA que pueda validar el control podría emitir para este nombre (sujeto a las reglas normales de las CA). Agregar CAA es un refuerzo opcional para muchas PYMEs.";
 
   const finding: ScanFinding = {
     id: `dns-caa-${trimmed}`,

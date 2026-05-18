@@ -80,29 +80,29 @@ export async function collectDnsAuthDetailsFindings(
 
     if (tail === "passall") {
       severity = "medium";
-      title = "SPF ends with +all (overly permissive)";
+      title = "SPF termina con +all (demasiado permisivo)";
       explanation =
-        "An SPF record that ends with +all effectively allows anyone to pass SPF for your domain — this is a serious email-spoofing misconfiguration. Replace with explicit sending sources and a restrictive \"all\" mechanism.";
+        "Un SPF que termina con +all permite, en la práctica, que cualquiera pueda pasar SPF para tu dominio; esto es una configuración grave que facilita la suplantación de correo. Sustituye el mecanismo por fuentes de envío explícitas y un \"all\" restrictivo.";
     } else if (tail === "strict") {
       severity = "low";
-      title = "SPF uses a strict fail (-all) default";
+      title = "SPF usa -all como política estricta";
       explanation =
-        "The SPF record ends with -all, meaning senders not in your SPF should be rejected — a strong posture when your authorized senders are complete.";
+        "El SPF termina con -all, lo que significa que los remitentes no incluidos en tu SPF deberían ser rechazados; es una postura sólida cuando tu lista de emisores autorizados está completa.";
     } else if (tail === "soft") {
       severity = "low";
-      title = "SPF uses softfail (~all)";
+      title = "SPF usa softfail (~all)";
       explanation =
-        "SPF ends with ~all (soft fail) — receiving servers may still deliver suspicious mail. Consider tightening to -all once all legitimate senders are listed.";
+        "El SPF termina con ~all (soft fail); los servidores receptores podrían seguir entregando correo sospechoso. Ajusta a -all cuando hayas listado todos los emisores legítimos.";
     } else if (tail === "neutral") {
       severity = "low";
-      title = "SPF uses neutral (?all)";
+      title = "SPF usa neutral (?all)";
       explanation =
-        "?all is neutral — it neither passes nor fails unknown senders strongly. Review whether you can use ~all or -all with a complete sender list.";
+        "?all es neutral: no aprueba ni desaprueba con firmeza a los remitentes desconocidos. Revisa si puedes usar ~all o -all con una lista completa de emisores.";
     } else {
       severity = "low";
-      title = "SPF record present — default policy unclear";
+      title = "Se detectó un SPF, pero la política final no está clara";
       explanation =
-        "We could not detect a clear terminal all mechanism (-all, ~all, ?all, +all). Verify the SPF string ends with the policy you intend.";
+        "No pudimos detectar un mecanismo \"all\" final claro (-all, ~all, ?all, +all). Verifica que el string SPF termina con la política que deseas aplicar.";
     }
 
     findings.push({
@@ -130,24 +130,24 @@ export async function collectDnsAuthDetailsFindings(
 
     if (p === "none") {
       severity = "medium";
-      title = "DMARC policy is p=none (monitoring only)";
+      title = "La política DMARC es p=none (solo monitorización)";
       explanation =
-        "DMARC is published but policy is none — suspicious mail may still be delivered. Move toward quarantine or reject once you are confident legitimate mail passes SPF/DKIM.";
+        "DMARC está publicado, pero la política es none; el correo sospechoso aún podría entregarse. Avanza hacia quarantine o reject cuando estés seguro de que el correo legítimo pasa SPF/DKIM.";
     } else if (p === "quarantine") {
       severity = "low";
-      title = "DMARC policy uses quarantine";
+      title = "La política DMARC usa quarantine";
       explanation =
-        "Suspicious mail can be marked as spam — stronger than none. Consider reject for high-risk brands when ready.";
+        "El correo sospechoso puede marcarse como spam, algo más fuerte que none. Considera reject para marcas de alto riesgo cuando estés listo.";
     } else if (p === "reject") {
       severity = "low";
-      title = "DMARC policy uses reject";
+      title = "La política DMARC usa reject";
       explanation =
-        "Strong DMARC — failing messages can be blocked. Keep monitoring aggregate reports for false positives.";
+        "DMARC fuerte: los mensajes que fallen podrían bloquearse. Sigue monitoreando los reportes agregados para evitar falsos positivos.";
     } else {
       severity = "low";
-      title = "DMARC record present — policy could not be parsed";
+      title = "Se encontró un registro DMARC, pero no se pudo interpretar la política";
       explanation =
-        "A DMARC TXT record exists; confirm p=none|quarantine|reject is set as intended.";
+        "Existe un registro TXT DMARC; confirma que p=none|quarantine|reject esté configurado como corresponde.";
     }
 
     findings.push({

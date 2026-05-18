@@ -77,9 +77,9 @@ async function collectFindingsForHost(
       id: `osint-passive-${id}-securitytxt-missing`,
       module: MODULE,
       severity: "low",
-      title: `security.txt not reachable for ${host}`,
+      title: `No se pudo acceder a security.txt para ${host}`,
       explanation:
-        "A public security.txt helps security researchers report issues responsibly. If you expect external reports, publish one at /.well-known/security.txt over HTTPS.",
+        "Un security.txt público ayuda a que los investigadores de seguridad informen de forma responsable. Si esperas reportes externos, publica uno en /.well-known/security.txt mediante HTTPS.",
       metadata: {
         subjectHost: host,
         subjectSource,
@@ -100,9 +100,9 @@ async function collectFindingsForHost(
       id: `osint-passive-${id}-securitytxt-present`,
       module: MODULE,
       severity: "low",
-      title: `security.txt is published for ${host}`,
+      title: `security.txt está publicado para ${host}`,
       explanation:
-        "Good — you signal how to report security issues. Keep contact fields current.",
+        "Bien: indicas cómo reportar incidencias de seguridad. Mantén actualizados los campos de contacto.",
       metadata: {
         subjectHost: host,
         subjectSource,
@@ -123,9 +123,9 @@ async function collectFindingsForHost(
       id: `osint-passive-${id}-https-head-fail`,
       module: MODULE,
       severity: "low",
-      title: `HTTPS root check inconclusive for ${host}`,
+      title: `La comprobación del root HTTPS para ${host} es inconclusa`,
       explanation:
-        "We could not reliably read response headers from https:// on this hostname — the site may redirect, block bots, or lack TLS on this name.",
+        "No fue posible leer con fiabilidad las cabeceras de respuesta de https:// en este nombre de host; el sitio puede redirigir, bloquear bots o no tener TLS para este nombre.",
       metadata: {
         subjectHost: host,
         subjectSource,
@@ -149,9 +149,9 @@ async function collectFindingsForHost(
       id: `osint-passive-${id}-no-hsts`,
       module: MODULE,
       severity: "medium",
-      title: `Strict-Transport-Security (HSTS) not observed for ${host}`,
+      title: `No se observó Strict-Transport-Security (HSTS) para ${host}`,
       explanation:
-        "Without HSTS, users can be downgraded to plaintext more easily. Enable HSTS at the edge or origin when you control HTTPS.",
+        "Sin HSTS, es más fácil degradar a texto plano. Habilita HSTS en el edge o en el origen cuando controles HTTPS.",
       metadata: {
         subjectHost: host,
         subjectSource,
@@ -165,9 +165,9 @@ async function collectFindingsForHost(
       id: `osint-passive-${id}-hsts`,
       module: MODULE,
       severity: "low",
-      title: `HSTS header present for ${host}`,
+      title: `Se detectó el encabezado HSTS para ${host}`,
       explanation:
-        "Browsers remember to use HTTPS for this host, which reduces trivial downgrade risk.",
+        "Los navegadores recuerdan usar HTTPS para este host, lo que reduce el riesgo trivial de degradación.",
       metadata: {
         subjectHost: host,
         subjectSource,
@@ -184,9 +184,9 @@ async function collectFindingsForHost(
       id: `osint-passive-${id}-no-csp`,
       module: MODULE,
       severity: "low",
-      title: `Content-Security-Policy not set for ${host}`,
+      title: `No se configuró Content-Security-Policy para ${host}`,
       explanation:
-        "CSP narrows what scripts and assets can load — useful against XSS and some supply-chain risks. Consider a staged rollout.",
+        "CSP limita qué scripts y recursos pueden cargarse; es útil contra XSS y algunos riesgos de la cadena de suministro. Considera un despliegue gradual.",
       metadata: {
         subjectHost: host,
         subjectSource,
@@ -201,9 +201,9 @@ async function collectFindingsForHost(
       id: `osint-passive-${id}-framing`,
       module: MODULE,
       severity: "low",
-      title: `Framing controls not obvious for ${host}`,
+      title: `No se ven controles de protección de framing para ${host}`,
       explanation:
-        "X-Frame-Options or CSP frame-ancestors reduces clickjacking. Add one if you expose interactive pages.",
+        "X-Frame-Options o CSP frame-ancestors reduce el clickjacking. Añade uno si expones páginas interactivas.",
       metadata: {
         subjectHost: host,
         subjectSource,
@@ -218,9 +218,9 @@ async function collectFindingsForHost(
       id: `osint-passive-${id}-referrer-policy`,
       module: MODULE,
       severity: "low",
-      title: `Referrer-Policy not set for ${host}`,
+      title: `No se configuró Referrer-Policy para ${host}`,
       explanation:
-        "Referrer-Policy limits data leaked in outbound navigation metadata — modest privacy/security win.",
+        "Referrer-Policy limita qué datos se filtran en la navegación saliente; es una mejora moderada en privacidad y seguridad.",
       metadata: {
         subjectHost: host,
         subjectSource,
@@ -235,8 +235,8 @@ async function collectFindingsForHost(
       id: `osint-passive-${id}-permissions-policy`,
       module: MODULE,
       severity: "low",
-      title: `Permissions-Policy present for ${host}`,
-      explanation: "Fine-grained browser feature toggles are configured.",
+      title: `Permissions-Policy configurada para ${host}`,
+      explanation: "Se configuraron con precisión los toggles de funciones del navegador.",
       metadata: {
         subjectHost: host,
         subjectSource,
@@ -257,11 +257,11 @@ async function collectFindingsForHost(
     module: MODULE,
     severity: hasMtaSts ? "low" : "medium",
     title: hasMtaSts
-      ? `MTA-STS DNS record found (${mtaStsName})`
-      : `No MTA-STS TXT at ${mtaStsName}`,
+      ? `Se encontró el registro DNS MTA-STS (${mtaStsName})`
+      : `No hay TXT MTA-STS en ${mtaStsName}`,
     explanation: hasMtaSts
-      ? "MTA-STS helps receiving mail servers require encrypted SMTP for addresses on this hostname, reducing downgrade attacks."
-      : "Without MTA-STS, SMTP transport for mail on this hostname may be easier to degrade in transit — consider STS for primary mail domains.",
+      ? "MTA-STS ayuda a que los servidores de correo receptores exijan SMTP cifrado para direcciones en este nombre de host, reduciendo ataques de degradación."
+      : "Sin MTA-STS, el transporte SMTP de correo para este nombre de host puede degradarse con más facilidad en tránsito; considera STS para los dominios de correo principales.",
     metadata: {
       subjectHost: host,
       subjectSource,
@@ -282,11 +282,11 @@ async function collectFindingsForHost(
     module: MODULE,
     severity: hasTlsRpt ? "low" : "low",
     title: hasTlsRpt
-      ? `TLS reporting (TLS-RPT) TXT found (${tlsRptName})`
-      : `No TLS-RPT TXT at ${tlsRptName}`,
+      ? `Se encontró TXT de reporting TLS (TLS-RPT) (${tlsRptName})`
+      : `No hay TXT TLS-RPT en ${tlsRptName}`,
     explanation: hasTlsRpt
-      ? "TLS-RPT can alert you to inbound SMTP TLS failures — useful operational visibility."
-      : "TLS-RPT is optional but helps detect mail transport TLS issues when published at _smtp._tls.",
+      ? "TLS-RPT puede alertarte sobre fallas de TLS SMTP entrante; útil para visibilidad operativa."
+      : "TLS-RPT es opcional, pero ayuda a detectar problemas de TLS del transporte de correo cuando se publica en _smtp._tls.",
     metadata: {
       subjectHost: host,
       subjectSource,
@@ -307,11 +307,11 @@ async function collectFindingsForHost(
     module: MODULE,
     severity: "low",
     title: hasBimi
-      ? `BIMI record present (${bimiName})`
-      : `No default BIMI record at ${bimiName}`,
+      ? `Registro BIMI presente (${bimiName})`
+      : `No hay registro BIMI predeterminado en ${bimiName}`,
     explanation: hasBimi
-      ? "BIMI ties brand logos to validated email — often paired with strong DMARC."
-      : "BIMI is optional brand signaling; absence alone is not a vulnerability.",
+      ? "BIMI asocia el logo de la marca a correos validados; a menudo se combina con un DMARC sólido."
+      : "BIMI es un señalamiento de marca opcional; su ausencia no implica por sí sola una vulnerabilidad.",
     metadata: {
       subjectHost: host,
       subjectSource,
@@ -329,9 +329,9 @@ async function collectFindingsForHost(
         id: `osint-passive-${id}-dnssec`,
         module: MODULE,
         severity: "low",
-        title: `DNSSEC DNSKEY present at apex ${apex}`,
+        title: `DNSSEC: se detectaron DNSKEY en el apex ${apex}`,
         explanation:
-          "Your DNS zone appears to publish DNSKEYs — resolvers that validate DNSSEC get stronger integrity guarantees for signed records.",
+          "Tu zona DNS parece publicar DNSKEYs; los resolvedores que validan DNSSEC obtienen garantías de integridad más fuertes para registros firmados.",
         metadata: {
           subjectHost: host,
           subjectSource,
@@ -346,9 +346,9 @@ async function collectFindingsForHost(
         id: `osint-passive-${id}-dnssec-absent`,
         module: MODULE,
         severity: "low",
-        title: `No DNSKEY at apex ${apex} (DNSSEC not indicated)`,
+        title: `No hay DNSKEY en el apex ${apex} (DNSSEC no indicado)`,
         explanation:
-          "Many zones still run without DNSSEC. If you operate high-risk infrastructure, consider signing with your DNS provider.",
+          "Muchas zonas siguen funcionando sin DNSSEC. Si operas infraestructura de alto riesgo, considera firmar con tu proveedor DNS.",
         metadata: {
           subjectHost: host,
           subjectSource,
@@ -363,9 +363,9 @@ async function collectFindingsForHost(
         id: `osint-passive-${id}-dnssec-unknown`,
         module: MODULE,
         severity: "low",
-        title: `DNSSEC status unclear for apex ${apex}`,
+        title: `Estado de DNSSEC incierto para el apex ${apex}`,
         explanation:
-          "We could not confirm DNSKEY presence — resolver errors or split views can hide this signal.",
+          "No fue posible confirmar la presencia de DNSKEY; errores del resolvedor o vistas divididas pueden ocultar esta señal.",
         metadata: {
           subjectHost: host,
           subjectSource,
@@ -397,9 +397,9 @@ export async function collectPassiveOsintFindings(
         id: `osint-passive-email-skipped-external`,
         module: MODULE,
         severity: "low",
-        title: "Some pasted email domains are outside the scan apex",
+        title: "Algunos dominios de correo pegados están fuera del apex del escaneo",
         explanation:
-          "Only mail domains under the same registrable apex as your primary scan target are assessed. Others were skipped to avoid third-party recon.",
+          "Solo se evalúan dominios de correo bajo el mismo apex registrable que el objetivo principal del escaneo. Los demás se omitieron para evitar recon de terceros.",
         metadata: {
           source: "osint_passive",
           check: "email_apex_filter",
@@ -413,9 +413,9 @@ export async function collectPassiveOsintFindings(
         id: `osint-passive-email-truncated-lines`,
         module: MODULE,
         severity: "low",
-        title: "Email list was truncated",
+        title: "La lista de correos se truncó",
         explanation:
-          "Too many entries were pasted — only the first batch was parsed. Split into multiple scans if needed.",
+          "Se pegaron demasiadas entradas; solo se analizó el primer lote. Divide en múltiples escaneos si es necesario.",
         metadata: { source: "osint_passive", check: "email_cap_lines" },
       });
     }
@@ -424,9 +424,9 @@ export async function collectPassiveOsintFindings(
         id: `osint-passive-email-truncated-domains`,
         module: MODULE,
         severity: "low",
-        title: "Distinct email domains capped",
+        title: "Se limitó el número de dominios de correo distintos",
         explanation:
-          "Only a limited number of unique domains from the list are included in OSINT. Remove noise or run separate scans.",
+          "Solo se incluyó un número limitado de dominios únicos en el OSINT. Elimina ruido o ejecuta escaneos separados.",
         metadata: { source: "osint_passive", check: "email_cap_domains" },
       });
     }
