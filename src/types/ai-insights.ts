@@ -30,6 +30,8 @@ export interface AiInsightsResponseBody {
   checklistRowInsightsById?: Record<string, AiPerFindingInsight>;
   /** Server-set: actual model slug used (after retries). */
   modelUsed?: string;
+  /** Server-set when response comes from Convex `aiInsightsCache` (24h TTL). */
+  servedFromCache?: boolean;
 }
 
 /** Minimal payload from client/server for LLM (no hostname bulk, no metadata). */
@@ -66,4 +68,8 @@ export interface AiInsightsRequestBody {
     detail?: string;
   }>;
   modules: AiInsightsMinimalModuleInput[];
+  /** Persist to `scans` row after generation when user is signed in. */
+  convexScanId?: string;
+  /** Skip Convex cache lookup and model regeneration (higher cost). */
+  forceRefresh?: boolean;
 }

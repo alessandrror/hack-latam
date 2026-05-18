@@ -1,162 +1,79 @@
 import {
-  buildChatUserPrompt,
-  getChatSystemPrompt,
+  buildChatUserContent,
+  CHAT_SYSTEM_PROMPT,
   parseChatModelOutput,
 } from "@/lib/ai/chat-prompt";
 import { callOpenRouterCompletion } from "@/lib/ai/openrouter";
 import { parseScanSnapshot } from "@/lib/ai/parse-scan-snapshot";
-import { checkRateLimit } from "@/lib/ai/rate-limit";
+import type { AiChatRequestBody, AiChatResponseBody } from "@/types/ai-chat";
 import type { AiInsightsResponseBody } from "@/types/ai-insights";
-import {
-  AI_CHAT_LIMITS,
-  type AiChatMessage,
-  type AiChatRequestBody,
-  type AiChatResponseBody,
-} from "@/types/ai-chat";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-function parsePriorInsights(raw: unknown): AiInsightsResponseBody | undefined {
-  if (!raw || typeof raw !== "object") return undefined;
-  const o = raw as Record<string, unknown>;
-  if (typeof o.executiveSummary !== "string") return undefined;
-  if (!Array.isArray(o.topActions) || !Array.isArray(o.disclaimers)) {
-    return undefined;
-  }
-  return raw as AiInsightsResponseBody;
-}
-
-function normalizeChatMessageContent(
-  content: string,
-  role: AiChatMessage["role"],
-  isLatestUserMessage: boolean,
-): string | null {
-  const trimmed = content.trim();
-  if (!trimmed) return null;
-
-  const maxLen = isLatestUserMessage
-    ? AI_CHAT_LIMITS.maxMessageLength
-    : AI_CHAT_LIMITS.maxHistoryMessageLength;
-
-  if (trimmed.length > maxLen) {
-    if (isLatestUserMessage) return null;
-    return `${trimmed.slice(0, maxLen - 1)}…`;
-  }
-  return trimmed;
-}
-
-function parseChatMessages(raw: unknown): AiChatMessage[] | null {
-  if (!Array.isArray(raw) || raw.length === 0) return null;
-  const out: AiChatMessage[] = [];
-  for (let i = 0; i < raw.length; i++) {
-    const item = raw[i];
-    if (!item || typeof item !== "object") return null;
-    const m = item as Record<string, unknown>;
-    if (m.role !== "user" && m.role !== "assistant") return null;
-    if (typeof m.content !== "string") return null;
-
-    const isLatest = i === raw.length - 1;
-    const isLatestUser = isLatest && m.role === "user";
-    const content = normalizeChatMessageContent(
-      m.content,
-      m.role as AiChatMessage["role"],
-      isLatestUser,
-    );
-    if (!content) return null;
-    out.push({ role: m.role, content });
-  }
-  if (out[out.length - 1]?.role !== "user") return null;
-  return out;
-}
-
-function parseChatRequestBody(payload: unknown): AiChatRequestBody | null {
-  if (!payload || typeof payload !== "object") return null;
-  const snapshot = parseScanSnapshot(payload);
-  if (!snapshot) return null;
-
-  const root = payload as Record<string, unknown>;
-  const messages = parseChatMessages(root.messages);
-  if (!messages) return null;
-
-  if (messages.length > AI_CHAT_LIMITS.maxMessagesInRequest) return null;
-
-  const userTurns = messages.filter((m) => m.role === "user").length;
-  if (userTurns > AI_CHAT_LIMITS.maxTurnsPerSession) return null;
-
-  const priorInsights = parsePriorInsights(root.priorInsights);
-
-  return { scanSnapshot: snapshot, priorInsights, messages };
-}
-
-async function generateChatReply(params: {
-  apiKey: string;
-  model: string;
-  scanMode: "deep" | "quick";
-  body: AiChatRequestBody;
-}): Promise<AiChatResponseBody & { modelUsed: string }> {
-  const recentMessages = params.body.messages.slice(
-    -AI_CHAT_LIMITS.maxMessagesSentToModel,
+function isInsightsResponse(x: unknown): x is AiInsightsResponseBody {
+  if (!x || typeof x !== "object") return false;
+  const o = x as Record<string, unknown>;
+  return (
+    typeof o.executiveSummary === "string" &&
+    Array.isArray(o.topActions) &&
+    Array.isArray(o.disclaimers) &&
+    typeof o.perFindingInsightsById === "object" &&
+    o.perFindingInsightsById !== null
   );
-  const userContent = buildChatUserPrompt({
-    snapshot: params.body.scanSnapshot,
-    priorInsights: params.body.priorInsights,
-    recentMessages,
-  });
+}
 
-  const { rawText, model } = await callOpenRouterCompletion({
-    apiKey: params.apiKey,
-    model: params.model,
-    messages: [
-      { role: "system", content: getChatSystemPrompt(params.scanMode) },
-      { role: "user", content: userContent },
-    ],
-  });
+function parseChatBody(payload: unknown): AiChatRequestBody | null {
+  if (!payload || typeof payload !== "object") return null;
+  const p = payload as Record<string, unknown>;
 
-  const parsed = parseChatModelOutput(rawText);
-  return { ...parsed, modelUsed: model };
+  const scanSnapshot = parseScanSnapshot(p.scanSnapshot);
+  if (!scanSnapshot) return null;
+
+  if (!isInsightsResponse(p.priorInsights)) return null;
+
+  const messagesRaw = p.messages;
+  if (!Array.isArray(messagesRaw) || messagesRaw.length === 0) return null;
+
+  const messages: AiChatRequestBody["messages"] = [];
+  for (const m of messagesRaw) {
+    if (!m || typeof m !== "object") return null;
+    const o = m as Record<string, unknown>;
+    if (o.role !== "user" && o.role !== "assistant") return null;
+    if (typeof o.content !== "string") return null;
+    messages.push({ role: o.role, content: o.content });
+  }
+
+  // The model prompt assumes the last message is authored by the user.
+  if (messages[messages.length - 1]?.role !== "user") return null;
+  const lastUser = messages[messages.length - 1];
+  if (!lastUser.content.trim()) return null;
+
+  return {
+    scanSnapshot,
+    priorInsights: p.priorInsights as AiInsightsResponseBody,
+    messages,
+  };
 }
 
 export async function POST(request: Request) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json(
-      { error: "Debes iniciar sesión para usar el chat de seguimiento." },
+      { error: "Debes iniciar sesión para usar el chat de refinamiento." },
       { status: 401 },
-    );
-  }
-
-  const rateKey = `ai-chat:${userId}`;
-  const rate = checkRateLimit(
-    rateKey,
-    AI_CHAT_LIMITS.rateLimitPerHour,
-    60 * 60 * 1000,
-  );
-  if (!rate.allowed) {
-    return NextResponse.json(
-      {
-        error: `Límite de mensajes alcanzado. Intenta de nuevo en ${rate.retryAfterSec ?? 60}s.`,
-      },
-      {
-        status: 429,
-        headers: rate.retryAfterSec
-          ? { "Retry-After": String(rate.retryAfterSec) }
-          : undefined,
-      },
     );
   }
 
   const apiKey = process.env.OPENROUTER_API_KEY?.trim();
   if (!apiKey) {
     return NextResponse.json(
-      {
-        error:
-          "El chat de IA no está configurado. Configura OPENROUTER_API_KEY.",
-      },
+      { error: "IA no configurada. Define OPENROUTER_API_KEY." },
       { status: 503 },
     );
   }
+  const openRouterKey = apiKey;
 
   let json: unknown;
   try {
@@ -165,22 +82,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Cuerpo JSON inválido." }, { status: 400 });
   }
 
-  const validated = parseChatRequestBody(json);
-  if (!validated) {
+  const body = parseChatBody(json);
+  if (!body) {
     return NextResponse.json(
       {
         error:
-          "Cuerpo inválido. Revisa scanSnapshot, que el último mensaje sea del usuario (máx. 2000 caracteres) y que priorInsights exista si ya generaste orientación IA.",
-      },
-      { status: 400 },
-    );
-  }
-
-  if (!validated.priorInsights) {
-    return NextResponse.json(
-      {
-        error:
-          "Genera primero los insights estructurados antes de usar el chat de seguimiento.",
+          "Cuerpo inválido. Requiere scanSnapshot, priorInsights (resultado previo de /api/ai/insights) y messages[].",
       },
       { status: 400 },
     );
@@ -191,40 +98,41 @@ export async function POST(request: Request) {
     "mistralai/mistral-small-24b-instruct-2501";
   const fallback =
     process.env.OPENROUTER_MODEL_FALLBACK?.trim() || "openai/gpt-4o-mini";
-  const scanMode = validated.scanSnapshot.scanMode ?? "deep";
 
-  let lastErr: unknown;
-  try {
-    const primaryResult = await generateChatReply({
-      apiKey,
-      model: primary,
-      scanMode,
-      body: validated,
+  const userContent = buildChatUserContent(body);
+
+  async function runModel(model: string): Promise<AiChatResponseBody & { modelUsed: string }> {
+    const { rawText, model: used } = await callOpenRouterCompletion({
+      apiKey: openRouterKey,
+      model,
+      messages: [
+        { role: "system", content: CHAT_SYSTEM_PROMPT },
+        { role: "user", content: userContent },
+      ],
     });
-    return NextResponse.json(primaryResult);
-  } catch (e) {
-    lastErr = e;
-  }
-
-  if (!fallback || fallback === primary) {
-    const msg =
-      lastErr instanceof Error ? lastErr.message : "Error al generar respuesta.";
-    return NextResponse.json({ error: msg }, { status: 502 });
+    const parsed = parseChatModelOutput(rawText);
+    return { ...parsed, modelUsed: used };
   }
 
   try {
-    const fallbackResult = await generateChatReply({
-      apiKey,
-      model: fallback,
-      scanMode,
-      body: validated,
-    });
-    return NextResponse.json(fallbackResult);
+    const out = await runModel(primary);
+    return NextResponse.json(out);
+  } catch (firstErr) {
+    if (!fallback || fallback === primary) {
+      const msg =
+        firstErr instanceof Error
+          ? firstErr.message
+          : "Error en generación del chat.";
+      return NextResponse.json({ error: msg }, { status: 502 });
+    }
+  }
+
+  try {
+    const out = await runModel(fallback);
+    return NextResponse.json(out);
   } catch (e) {
     const msg =
-      e instanceof Error
-        ? e.message
-        : `${lastErr instanceof Error ? lastErr.message : "Falló el modelo principal"}, fallback falló.`;
+      e instanceof Error ? e.message : "Fallo primario y de respaldo.";
     return NextResponse.json({ error: msg }, { status: 502 });
   }
 }

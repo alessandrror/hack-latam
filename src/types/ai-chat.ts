@@ -1,27 +1,12 @@
-import type { AiInsightsRequestBody, AiInsightsResponseBody } from "./ai-insights";
+import type { AiInsightsRequestBody, AiInsightsResponseBody } from "@/types/ai-insights";
 
-export type AiChatMessageRole = "user" | "assistant";
-
-export interface AiChatMessage {
-  role: AiChatMessageRole;
+/** One message in the guided refinement thread (MVP). */
+export type AiChatMessage = {
+  role: "user" | "assistant";
   content: string;
-}
+};
 
-/** POST body for `/api/ai/chat`. */
-export interface AiChatRequestBody {
-  scanSnapshot: AiInsightsRequestBody;
-  priorInsights?: AiInsightsResponseBody;
-  messages: AiChatMessage[];
-}
-
-export interface AiChatResponseBody {
-  reply: string;
-  citedFindingIds?: string[];
-  citedChecklistIds?: string[];
-  disclaimers?: string[];
-  modelUsed?: string;
-}
-
+/** Hard limits used by the chat UI + server to control cost/abuse. */
 export const AI_CHAT_LIMITS = {
   /** New user input in the composer. */
   maxMessageLength: 2000,
@@ -32,3 +17,21 @@ export const AI_CHAT_LIMITS = {
   maxTurnsPerSession: 10,
   rateLimitPerHour: 40,
 } as const;
+
+/** POST body for `POST /api/ai/chat` (see docs/ai-chat-refinement-prd.md). */
+export interface AiChatRequestBody {
+  /** Current scan snapshot (same minimal shape as insights input). */
+  scanSnapshot: AiInsightsRequestBody;
+  /** Structured output from a prior successful `POST /api/ai/insights` call. */
+  priorInsights: AiInsightsResponseBody;
+  /** Last user question is the final `user` message. */
+  messages: AiChatMessage[];
+}
+
+/** JSON response from `POST /api/ai/chat`. */
+export interface AiChatResponseBody {
+  reply: string;
+  citedFindingIds?: string[];
+  disclaimers?: string[];
+  modelUsed?: string;
+}

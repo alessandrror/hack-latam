@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { History } from "lucide-react";
 import { AiInsightsColumn } from "@/components/dashboard/AiInsightsColumn";
 import { AllFindingsPanel } from "@/components/dashboard/AllFindingsPanel";
@@ -10,7 +10,6 @@ import { ChecklistColumn } from "@/components/dashboard/ChecklistColumn";
 import { RiskColumn } from "@/components/dashboard/RiskColumn";
 import { ScanOverviewPanel } from "@/components/dashboard/ScanOverviewPanel";
 import { SkeletonGrid } from "@/components/dashboard/SkeletonGrid";
-import { clearChatMessages, chatSessionStorageKey } from "@/lib/ai/chat-session-storage";
 import {
   Sheet,
   SheetContent,
@@ -18,19 +17,22 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { aggregateHostnamesFromFindings } from "@/lib/dashboard/findings";
-import { buildInsightsRequestBody } from "@/lib/dashboard/insights-payload";
+import {
+  aggregateHostnamesFromFindings,
+  buildChecklistRows,
+} from "@/lib/dashboard/findings";
+import { classifyAndNormalizeTarget } from "@/lib/recon/normalize-target";
+import { extractApexFromNormalizedHost } from "@/lib/recon/extract-apex";
 import {
   appendScanSessionHistoryEntry,
   loadScanSessionHistory,
   persistScanSessionHistory,
   type ScanSessionHistoryEntry,
 } from "@/lib/scan/scanSessionHistory";
-import { extractApexFromNormalizedHost } from "@/lib/recon/extract-apex";
-import { classifyAndNormalizeTarget } from "@/lib/recon/normalize-target";
 import { cn } from "@/lib/utils";
 import type { AiInsightsResponseBody } from "@/types/ai-insights";
 import type { ScanResponseBody } from "@/types/scan";
+import { api } from "../../../convex/_generated/api";
 import {
   useCallback,
   useEffect,
@@ -40,12 +42,11 @@ import {
   type ReactNode,
 } from "react";
 
-import { api } from "../../../convex/_generated/api";
-
 import { ScanFormPanel, type ScanMode } from "./ScanFormPanel";
 import { ScanHistorySidebar } from "./ScanHistorySidebar";
 import { ScanMainStart } from "./ScanMainEmpty";
 import { ScanTabs, type ScanTabId } from "./ScanTabs";
+import type { VerificationSnapshot } from "./OwnershipVerificationSection";
 
 function isAiInsightsResponseBody(x: unknown): x is AiInsightsResponseBody {
   if (!x || typeof x !== "object") return false;
@@ -65,6 +66,12 @@ type ScanWorkspaceProps = {
 
 export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
   const { isLoaded: authLoaded, isSignedIn } = useAuth();
+  const createScanMutation = useMutation(api.scans.createScan);
+  const convexScans = useQuery(
+    api.scans.getUserScans,
+    authLoaded && isSignedIn ? {} : "skip",
+  );
+
   const [target, setTarget] = useState(initialTarget);
   const [scanMode, setScanMode] = useState<ScanMode>("deep");
   const [activeTab, setActiveTab] = useState<ScanTabId>("overview");
@@ -75,17 +82,75 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sessionHistory, setSessionHistory] = useState<ScanSessionHistoryEntry[]>(
+    [],
+  );
+  const [convexScanId, setConvexScanId] = useState<string | null>(null);
   const [relatedEmails, setRelatedEmails] = useState("");
-  const [history, setHistory] = useState<ScanSessionHistoryEntry[]>([]);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(
     null,
   );
 
+  const classifiedTarget = useMemo(
+    () => classifyAndNormalizeTarget(target),
+    [target],
+  );
+  const targetKind = classifiedTarget.kind;
+  const apexDomain =
+    targetKind === "domain"
+      ? extractApexFromNormalizedHost(classifiedTarget.normalized)
+      : null;
+
+  const convexVerificationStatus = useQuery(
+    // Ownership verification status for the current apex.
+    api.verifiedDomains.getStatus,
+    authLoaded && isSignedIn && apexDomain ? { domain: apexDomain } : "skip",
+  );
+
+  const verification: VerificationSnapshot | undefined =
+    authLoaded && isSignedIn && apexDomain
+      ? convexVerificationStatus === undefined
+        ? undefined
+        : convexVerificationStatus ?? { status: "pending", method: "dns_txt" }
+      : undefined;
+
   useEffect(() => {
     queueMicrotask(() => {
-      setHistory(loadScanSessionHistory());
+      setSessionHistory(loadScanSessionHistory());
     });
   }, []);
+
+  const convexHistoryEntries = useMemo((): ScanSessionHistoryEntry[] => {
+    if (!convexScans?.length) return [];
+    return convexScans.map((doc) => ({
+      id: doc._id,
+      savedAt: doc.createdAt,
+      inputTarget: doc.target,
+      mode: doc.scanMode,
+      result: {
+        target: doc.target,
+        normalizedTarget: doc.normalizedTarget,
+        inputKind: doc.inputKind,
+        mode: doc.scanMode,
+        findings: doc.findings as ScanResponseBody["findings"],
+        modules: doc.modules as ScanResponseBody["modules"],
+      },
+      aiInsights: doc.aiInsights as AiInsightsResponseBody | undefined,
+    }));
+  }, [convexScans]);
+
+  const history = useMemo(() => {
+    if (authLoaded && isSignedIn && convexScans !== undefined) {
+      return convexHistoryEntries;
+    }
+    return sessionHistory;
+  }, [
+    authLoaded,
+    isSignedIn,
+    convexScans,
+    convexHistoryEntries,
+    sessionHistory,
+  ]);
 
   const findingsForGrid = useMemo(
     () => result?.findings ?? [],
@@ -94,22 +159,6 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
   const hostAggregate = useMemo(
     () => aggregateHostnamesFromFindings(findingsForGrid),
     [findingsForGrid],
-  );
-
-  const classifiedTarget = useMemo(
-    () => classifyAndNormalizeTarget(target),
-    [target],
-  );
-  const apexDomain = useMemo(() => {
-    if (classifiedTarget.kind !== "domain") return null;
-    return extractApexFromNormalizedHost(classifiedTarget.normalized);
-  }, [classifiedTarget]);
-
-  const verification = useQuery(
-    api.verifiedDomains.getStatus,
-    authLoaded && isSignedIn && apexDomain
-      ? { domain: apexDomain }
-      : "skip",
   );
 
   const resetAi = useCallback(() => {
@@ -136,6 +185,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     setError(null);
     setActiveTab("overview");
     setSelectedHistoryId(null);
+    setConvexScanId(null);
     setMobileSidebarOpen(false);
     setRelatedEmails("");
   }, [resetAi]);
@@ -145,14 +195,17 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
       setResult(entry.result);
       setTarget(entry.inputTarget);
       setScanMode(entry.mode);
-      resetAi();
+      setAiResult(entry.aiInsights ?? null);
+      setAiError(null);
+      setAiLoading(false);
+      setConvexScanId(entry.id);
       setError(null);
       setActiveTab("overview");
       setSelectedHistoryId(entry.id);
       setMobileSidebarOpen(false);
       setRelatedEmails("");
     },
-    [resetAi],
+    [],
   );
 
   const historySidebar = useMemo(
@@ -168,18 +221,12 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     [history, selectedHistoryId, handleSelectHistory, handleNewScan, result, loading],
   );
 
-  const runScanCore = useCallback(async () => {
+  async function runScan(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setError(null);
     setResult(null);
     resetAi();
-    if (result?.normalizedTarget) {
-      clearChatMessages(
-        chatSessionStorageKey(
-          result.normalizedTarget,
-          result.mode ?? "deep",
-        ),
-      );
-    }
+    setConvexScanId(null);
     setLoading(true);
     setSelectedHistoryId(null);
     try {
@@ -195,10 +242,12 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
       });
       const body: unknown = await response.json();
       if (!response.ok) {
-        const o = body as Record<string, unknown>;
         const message =
-          typeof o.error === "string"
-            ? o.error
+          typeof body === "object" &&
+          body !== null &&
+          "error" in body &&
+          typeof (body as { error: unknown }).error === "string"
+            ? (body as { error: string }).error
             : `Error de escaneo (${response.status}).`;
         setError(message);
         return;
@@ -208,54 +257,104 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
       setActiveTab("overview");
       setMobileSidebarOpen(false);
 
-      setHistory((prev) => {
-        const { entries, newId } = appendScanSessionHistoryEntry(prev, {
-          inputTarget: target,
-          mode: scanMode,
-          result: scanResult,
+      let nextConvexId: string | null = null;
+      if (authLoaded && isSignedIn) {
+        try {
+          nextConvexId = await createScanMutation({
+            target,
+            normalizedTarget: scanResult.normalizedTarget,
+            inputKind: scanResult.inputKind,
+            scanMode: scanResult.mode,
+            findings: scanResult.findings,
+            modules: scanResult.modules,
+          });
+        } catch {
+          /* persistencia opcional */
+        }
+      }
+      setConvexScanId(nextConvexId);
+
+      if (!isSignedIn) {
+        setSessionHistory((prev) => {
+          const { entries, newId } = appendScanSessionHistoryEntry(prev, {
+            inputTarget: target,
+            mode: scanMode,
+            result: scanResult,
+          });
+          persistScanSessionHistory(entries);
+          queueMicrotask(() => {
+            setSelectedHistoryId(newId);
+          });
+          return entries;
         });
-        persistScanSessionHistory(entries);
+      } else if (nextConvexId) {
         queueMicrotask(() => {
-          setSelectedHistoryId(newId);
+          setSelectedHistoryId(nextConvexId);
         });
-        return entries;
-      });
+      }
     } catch {
       setError("Error de red — inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
-  }, [resetAi, result, scanMode, target, relatedEmails]);
-
-  async function runScan(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    await runScanCore();
   }
-
-  const handleOwnershipVerified = useCallback(() => {
-    void runScanCore();
-  }, [runScanCore]);
-
-  const scanSnapshot = useMemo(() => {
-    if (!result) return null;
-    return buildInsightsRequestBody({
-      result,
-      findings: findingsForGrid,
-      totalHostnames: hostAggregate.total,
-      hostnameSampleShownCount: hostAggregate.hostnames.length,
-    });
-  }, [findingsForGrid, hostAggregate.hostnames.length, hostAggregate.total, result]);
 
   const generateInsights = useCallback(
     async (opts?: { forceRefresh?: boolean; navigateToAi?: boolean }) => {
-      if (!result || loading || !scanSnapshot) return;
+      if (!result || loading) return;
+      if (!isSignedIn) {
+        setAiError(
+          "Debes iniciar sesión para generar orientación con IA.",
+        );
+        return;
+      }
       setAiLoading(true);
       setAiError(null);
       try {
+        const checklistRowsBuilt = buildChecklistRows(findingsForGrid).map(
+          (r) => ({
+            id: r.id,
+            label: r.label,
+            status: r.status,
+            ...(r.detail ? { detail: r.detail } : {}),
+          }),
+        );
+
+        const body = {
+          normalizedTarget: result.normalizedTarget,
+          inputKind: result.inputKind,
+          scanMode: result.mode,
+          totalHostnames: hostAggregate.total,
+          hostnameSampleShownCount: hostAggregate.hostnames.length,
+          findings: findingsForGrid.map((f) => ({
+            id: f.id,
+            module: f.module,
+            severity: f.severity,
+            title: f.title,
+            explanation: f.explanation,
+          })),
+          checklistRows:
+            result.mode === "quick"
+              ? undefined
+              : checklistRowsBuilt.length > 0
+                ? checklistRowsBuilt
+                : undefined,
+          modules: (result.modules ?? []).map((m) => ({
+            name: m.name,
+            status: m.status,
+            ...(typeof m.durationMs === "number"
+              ? { durationMs: m.durationMs }
+              : {}),
+            ...(m.errorMessage ? { errorMessage: m.errorMessage } : {}),
+          })),
+          ...(convexScanId ? { convexScanId } : {}),
+          forceRefresh: Boolean(opts?.forceRefresh),
+        };
+
         const response = await fetch("/api/ai/insights", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(scanSnapshot),
+          body: JSON.stringify(body),
         });
         const payload: unknown = await response.json();
         if (!response.ok) {
@@ -283,17 +382,16 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
         setAiLoading(false);
       }
     },
-    [loading, result, scanSnapshot],
+    [
+      convexScanId,
+      findingsForGrid,
+      hostAggregate.hostnames.length,
+      hostAggregate.total,
+      isSignedIn,
+      loading,
+      result,
+    ],
   );
-
-  const handleFindingCitationClick = useCallback((findingId: string) => {
-    setActiveTab("findings");
-    requestAnimationFrame(() => {
-      document
-        .getElementById(`finding-${findingId}`)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-  }, []);
 
   const displayTarget =
     result?.normalizedTarget?.trim() ||
@@ -322,7 +420,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
           totalHostnames={hostAggregate.total}
           aiResult={aiResult}
           aiLoading={aiLoading}
-          aiDisabled={loading}
+          aiDisabled={loading || !authLoaded || !isSignedIn}
           onGenerateInsights={() =>
             void generateInsights({ navigateToAi: false })
           }
@@ -376,14 +474,11 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
           loading={aiLoading}
           error={aiError}
           result={aiResult}
-          disabled={loading}
+          disabled={loading || !authLoaded || !isSignedIn}
+          servedFromCache={Boolean(aiResult?.servedFromCache)}
           onGenerate={(opts) =>
             void generateInsights({ ...opts, navigateToAi: true })
           }
-          scanSnapshot={scanSnapshot}
-          isSignedIn={Boolean(isSignedIn)}
-          authLoaded={authLoaded}
-          onFindingCitationClick={handleFindingCitationClick}
         />
       );
     }
@@ -419,25 +514,12 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
             error={error}
             authLoaded={authLoaded}
             isAuthenticated={Boolean(isSignedIn)}
-            targetKind={classifiedTarget.kind}
+            targetKind={targetKind}
             apexDomain={apexDomain}
-            verification={
-              verification === undefined
-                ? undefined
-                : verification === null
-                  ? null
-                  : {
-                      status: verification.status,
-                      method: verification.method,
-                      ...(verification.token !== undefined
-                        ? { token: verification.token }
-                        : {}),
-                      ...(verification.failureReason
-                        ? { failureReason: verification.failureReason }
-                        : {}),
-                    }
-            }
-            onOwnershipVerified={handleOwnershipVerified}
+            verification={verification}
+            onOwnershipVerified={() => {
+              // `verification` is sourced from Convex; once it updates, the UI unblocks deep mode.
+            }}
             relatedEmails={relatedEmails}
             onRelatedEmailsChange={setRelatedEmails}
           />

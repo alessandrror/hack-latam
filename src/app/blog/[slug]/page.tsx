@@ -37,7 +37,7 @@ export async function generateMetadata({
   const canonical = absoluteUrl(`/blog/${resolvedSlug}`);
 
   return {
-    title: post.title,
+    title: `${post.title} - Hack LATAM`,
     description: post.excerpt,
     keywords: post.tags,
     alternates: {
