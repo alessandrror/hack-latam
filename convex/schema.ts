@@ -63,4 +63,22 @@ export default defineSchema({
     truncatedUniqueDomainList: v.boolean(),
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
+
+  /** Chat history persisted for signed-in users. */
+  chatSessions: defineTable({
+    userId: v.string(),
+    normalizedTarget: v.string(),
+    scanMode: v.union(v.literal("quick"), v.literal("deep")),
+    convexScanId: v.optional(v.string()),
+    messages: v.array(
+      v.object({
+        role: v.union(v.literal("user"), v.literal("assistant")),
+        content: v.string(),
+      }),
+    ),
+    updatedAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_target", ["userId", "normalizedTarget", "scanMode"]),
 });

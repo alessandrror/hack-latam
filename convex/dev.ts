@@ -30,6 +30,7 @@ export const clearAllTablesForDev = mutationGeneric({
 
     await deleteTableInBatches("scans");
     await deleteTableInBatches("aiInsightsCache");
+    await deleteTableInBatches("chatSessions");
 
     return null;
   },

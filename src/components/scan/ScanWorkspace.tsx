@@ -2,7 +2,7 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
-import { History } from "lucide-react";
+import { ChevronLeft, ChevronRight, History } from "lucide-react";
 import { AiInsightsColumn } from "@/components/dashboard/AiInsightsColumn";
 import { AllFindingsPanel } from "@/components/dashboard/AllFindingsPanel";
 import { AssetsColumn } from "@/components/dashboard/AssetsColumn";
@@ -90,6 +90,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     [],
   );
   const [convexScanId, setConvexScanId] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [relatedEmails, setRelatedEmails] = useState("");
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(
     null,
@@ -167,13 +168,20 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
 
   const scanSnapshot = useMemo(() => {
     if (!result) return null;
-    return buildInsightsRequestBody({
+    const base = buildInsightsRequestBody({
       result,
       findings: findingsForGrid,
       totalHostnames: hostAggregate.total,
       hostnameSampleShownCount: hostAggregate.hostnames.length,
     });
-  }, [findingsForGrid, hostAggregate.hostnames.length, hostAggregate.total, result]);
+    return convexScanId ? { ...base, convexScanId } : base;
+  }, [
+    convexScanId,
+    findingsForGrid,
+    hostAggregate.hostnames.length,
+    hostAggregate.total,
+    result,
+  ]);
 
   const resetAi = useCallback(() => {
     setAiResult(null);
@@ -425,20 +433,22 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
 
     if (activeTabResolved === "assets") {
       return (
-        <AssetsColumn
-          displayTarget={displayTarget}
-          normalizedTarget={resolvedResult.normalizedTarget}
-          inputKind={resolvedResult.inputKind}
-          modules={moduleRows}
-          hostnames={hostAggregate.hostnames}
-          totalHostnames={hostAggregate.total}
-        />
+        <div className="px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
+          <AssetsColumn
+            displayTarget={displayTarget}
+            normalizedTarget={resolvedResult.normalizedTarget}
+            inputKind={resolvedResult.inputKind}
+            modules={moduleRows}
+            hostnames={hostAggregate.hostnames}
+            totalHostnames={hostAggregate.total}
+          />
+        </div>
       );
     }
 
     if (activeTabResolved === "findings") {
       return (
-        <div className="space-y-8 px-5 py-10 sm:px-8 lg:space-y-10 lg:px-12 lg:py-14">
+        <div className="space-y-8 px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
           <RiskColumn
             findings={findingsForGrid}
             perFindingInsightsById={perFindingMap}
@@ -453,30 +463,33 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
 
     if (activeTabResolved === "checklist") {
       return (
-        <ChecklistColumn
-          findings={findingsForGrid}
-          checklistRowInsightsById={checklistRowMap}
-          perFindingInsightsById={perFindingMap}
-        />
+        <div className="px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
+          <ChecklistColumn
+            findings={findingsForGrid}
+            checklistRowInsightsById={checklistRowMap}
+            perFindingInsightsById={perFindingMap}
+          />
+        </div>
       );
     }
 
     if (activeTabResolved === "ai") {
       return (
-        <AiInsightsColumn
-          loading={aiLoading}
-          error={aiError}
-          result={aiResult}
-          disabled={loading || !authLoaded || !isSignedIn}
-          servedFromCache={Boolean(aiResult?.servedFromCache)}
-          onGenerate={(opts) =>
-            void generateInsights({ ...opts, navigateToAi: true })
-          }
-          scanSnapshot={scanSnapshot}
-          isSignedIn={Boolean(isSignedIn)}
-          authLoaded={authLoaded}
-          onFindingCitationClick={handleFindingCitationClick}
-        />
+        <div className="px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
+          <AiInsightsColumn
+            loading={aiLoading}
+            error={aiError}
+            result={aiResult}
+            disabled={loading || !authLoaded || !isSignedIn}
+            servedFromCache={Boolean(aiResult?.servedFromCache)}
+            scanSnapshot={scanSnapshot}
+            isSignedIn={isSignedIn}
+            authLoaded={authLoaded}
+            onGenerate={(opts) =>
+              void generateInsights({ ...opts, navigateToAi: true })
+            }
+          />
+        </div>
       );
     }
 
@@ -570,13 +583,48 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
         >
           <aside
             className={cn(
-              "hidden w-72 shrink-0 flex-col border-border/50 bg-muted/20 dark:bg-muted/10 lg:flex",
+              "hidden shrink-0 flex-col border-border/50 bg-muted/20 dark:bg-muted/10 lg:flex lg:overflow-y-auto",
               "lg:min-h-0 lg:border-r lg:overflow-y-auto",
+              "transition-all duration-200",
+              sidebarCollapsed ? "w-10" : "w-72",
             )}
             aria-label="Historial de escaneos de esta sesión"
           >
-            <div className="flex flex-col px-4 py-5 lg:px-5 lg:py-6">
-              {historySidebar}
+            <div className="flex flex-col">
+              <div
+                className={cn(
+                  "flex items-center border-b border-border/40 py-2",
+                  sidebarCollapsed ? "justify-center px-0" : "justify-end px-2",
+                )}
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-md"
+                  aria-label={
+                    sidebarCollapsed
+                      ? "Expandir barra lateral del historial"
+                      : "Contraer barra lateral del historial"
+                  }
+                  onClick={() => setSidebarCollapsed((v) => !v)}
+                >
+                  {sidebarCollapsed ? (
+                    <ChevronRight className="size-4" aria-hidden />
+                  ) : (
+                    <ChevronLeft className="size-4" aria-hidden />
+                  )}
+                </Button>
+              </div>
+
+              <div
+                className={cn(
+                  "flex flex-col px-4 py-5 lg:px-5 lg:py-6",
+                  sidebarCollapsed && "hidden",
+                )}
+              >
+                {historySidebar}
+              </div>
             </div>
           </aside>
 

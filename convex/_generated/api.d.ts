@@ -9,6 +9,7 @@
  */
 
 import type * as aiInsightsCache from "../aiInsightsCache.js";
+import type * as chatSessions from "../chatSessions.js";
 import type * as dev from "../dev.js";
 import type * as emailDomainSummaries from "../emailDomainSummaries.js";
 import type * as scans from "../scans.js";
@@ -25,6 +26,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   aiInsightsCache: typeof aiInsightsCache;
+  chatSessions: typeof chatSessions;
   dev: typeof dev;
   emailDomainSummaries: typeof emailDomainSummaries;
   scans: typeof scans;

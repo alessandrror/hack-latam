@@ -95,12 +95,13 @@ export function AiInsightsColumn({
   const canChat = Boolean(result && scanSnapshot && !loading);
 
   useEffect(() => {
-    setView("resumen");
+    // Avoid setting state synchronously inside the effect body.
+    queueMicrotask(() => setView("resumen"));
   }, [result]);
 
   useEffect(() => {
     if (view === "chat" && !canChat) {
-      setView("resumen");
+      queueMicrotask(() => setView("resumen"));
     }
   }, [view, canChat]);
 

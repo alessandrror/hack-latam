@@ -12,12 +12,13 @@ import type { AiInsightsRequestBody, AiInsightsResponseBody } from "@/types/ai-i
 import {
   AI_CHAT_LIMITS,
   type AiChatMessage,
-  type AiChatResponseBody,
 } from "@/types/ai-chat";
 import { SignInButton, useUser } from "@clerk/nextjs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildSuggestedChatPrompts } from "@/lib/ai/chat-suggested-prompts";
 import { ChatMessageBubble, ChatTypingBubble } from "./ChatMessageBubble";
+import { api } from "../../../convex/_generated/api";
+import { useMutation, useQuery } from "convex/react";
 
 type AiChatPanelProps = {
   scanSnapshot: AiInsightsRequestBody;
@@ -27,11 +28,6 @@ type AiChatPanelProps = {
   onCitationClick?: (findingId: string) => void;
   className?: string;
 };
-
-function isAiChatResponseBody(x: unknown): x is AiChatResponseBody {
-  if (!x || typeof x !== "object") return false;
-  return typeof (x as { reply: unknown }).reply === "string";
-}
 
 export function AiChatPanel({
   scanSnapshot,
@@ -58,23 +54,51 @@ export function AiChatPanel({
     [scanSnapshot.normalizedTarget, scanSnapshot.scanMode],
   );
 
+  const scanMode = scanSnapshot.scanMode ?? "deep";
+  const canUseConvex = Boolean(isSignedIn && authLoaded);
+  const convexMessages = useQuery(
+    api.chatSessions.getMessages,
+    canUseConvex
+      ? { normalizedTarget: scanSnapshot.normalizedTarget, scanMode }
+      : "skip",
+  );
+  const upsertMessagesMutation = useMutation(api.chatSessions.upsertMessages);
+
   const [messages, setMessages] = useState<AiChatMessage[]>([]);
   const [lastCitedFindingIds, setLastCitedFindingIds] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showTypingBubble, setShowTypingBubble] = useState(false);
+  const [hydratedFromStorage, setHydratedFromStorage] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    queueMicrotask(() => {
-      setMessages(loadChatMessages(storageKey));
-    });
-  }, [storageKey]);
+    queueMicrotask(() => setHydratedFromStorage(false));
+  }, [storageKey, canUseConvex]);
 
   useEffect(() => {
+    if (hydratedFromStorage) return;
+
+    queueMicrotask(() => {
+      if (!canUseConvex) {
+        setMessages(loadChatMessages(storageKey));
+        setHydratedFromStorage(true);
+        return;
+      }
+
+      if (convexMessages !== undefined) {
+        setMessages(convexMessages);
+        setHydratedFromStorage(true);
+      }
+    });
+  }, [canUseConvex, convexMessages, hydratedFromStorage, storageKey]);
+
+  useEffect(() => {
+    if (canUseConvex) return;
     saveChatMessages(storageKey, messages);
-  }, [messages, storageKey]);
+  }, [canUseConvex, messages, storageKey]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
@@ -107,49 +131,135 @@ export function AiChatPanel({
       setInput("");
       setError(null);
       setLoading(true);
+      setShowTypingBubble(true);
 
       try {
         const response = await fetch("/api/ai/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+          },
           body: JSON.stringify({
             scanSnapshot,
             priorInsights,
             messages: nextMessages,
           }),
         });
-        const payload: unknown = await response.json();
-        if (!response.ok) {
-          const message =
-            typeof payload === "object" &&
-            payload !== null &&
-            "error" in payload &&
-            typeof (payload as { error: unknown }).error === "string"
-              ? (payload as { error: string }).error
-              : `Error de chat (${response.status}).`;
+
+        if (!response.ok || !response.body) {
+          let message = `Error de chat (${response.status}).`;
+          try {
+            const payload: unknown = await response.json();
+            if (
+              typeof payload === "object" &&
+              payload !== null &&
+              "error" in payload &&
+              typeof (payload as { error: unknown }).error === "string"
+            ) {
+              message = (payload as { error: string }).error;
+            }
+          } catch {
+          }
           setError(message);
           setMessages(messages);
           return;
         }
-        if (!isAiChatResponseBody(payload)) {
-          setError("Respuesta de chat inválida.");
-          setMessages(messages);
-          return;
-        }
-        const assistantMsg: AiChatMessage = {
-          role: "assistant",
-          content: payload.reply,
+
+        const encoderDecoded = new TextDecoder("utf-8");
+        const reader = response.body.getReader();
+        let buffer = "";
+
+        let assistantMsg: AiChatMessage | null = null;
+        let assistantText = "";
+        let cited: string[] = [];
+
+        const handlePayload = (payload: unknown) => {
+          if (!payload || typeof payload !== "object") return;
+          const p = payload as Record<string, unknown>;
+          const type = p.type;
+          if (type === "delta" && typeof p.chunk === "string") {
+            assistantText += p.chunk;
+            if (!assistantMsg) {
+              assistantMsg = { role: "assistant", content: "" };
+              setMessages([...nextMessages, assistantMsg]);
+            }
+            assistantMsg.content = assistantText;
+            setMessages([...nextMessages, assistantMsg]);
+            setShowTypingBubble(false);
+          } else if (type === "final") {
+            if (typeof p.reply === "string") assistantText = p.reply;
+            if (Array.isArray(p.citedFindingIds)) {
+              cited = p.citedFindingIds.filter(
+                (x): x is string => typeof x === "string",
+              );
+            }
+          } else if (type === "error" && typeof p.error === "string") {
+            throw new Error(p.error);
+          }
         };
-        setLastCitedFindingIds(payload.citedFindingIds ?? []);
-        setMessages([...nextMessages, assistantMsg]);
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += encoderDecoded.decode(value, { stream: true });
+          if (buffer.includes("\r")) buffer = buffer.replaceAll("\r", "");
+
+          while (true) {
+            const sepIdx = buffer.indexOf("\n\n");
+            if (sepIdx === -1) break;
+            const rawEvent = buffer.slice(0, sepIdx);
+            buffer = buffer.slice(sepIdx + 2);
+
+            const lines = rawEvent.split("\n");
+            for (const line of lines) {
+              const trimmedLine = line.trim();
+              if (!trimmedLine.startsWith("data:")) continue;
+              const dataStr = trimmedLine.slice("data:".length).trim();
+              if (!dataStr) continue;
+              let parsed: unknown;
+              try {
+                parsed = JSON.parse(dataStr);
+              } catch {
+                continue;
+              }
+              handlePayload(parsed);
+            }
+          }
+        }
+
+        const finalMessages: AiChatMessage[] = assistantMsg
+          ? [...nextMessages, { role: "assistant", content: assistantText }]
+          : nextMessages;
+        if (assistantMsg) setMessages(finalMessages);
+
+        setLastCitedFindingIds(cited);
+        if (canUseConvex) {
+          void upsertMessagesMutation({
+            normalizedTarget: scanSnapshot.normalizedTarget,
+            scanMode,
+            convexScanId: scanSnapshot.convexScanId,
+            messages: finalMessages,
+          });
+        }
       } catch {
         setError("Error de red — inténtalo de nuevo.");
-        setMessages(messages);
+        setMessages(nextMessages);
       } finally {
         setLoading(false);
+        setShowTypingBubble(false);
       }
     },
-    [atTurnLimit, loading, messages, priorInsights, scanSnapshot],
+    [
+      atTurnLimit,
+      canUseConvex,
+      loading,
+      messages,
+      priorInsights,
+      scanMode,
+      scanSnapshot,
+      upsertMessagesMutation,
+    ],
   );
 
   const shellClass = cn(
@@ -215,7 +325,7 @@ export function AiChatPanel({
             />
           ))
         )}
-        {loading ? <ChatTypingBubble /> : null}
+        {showTypingBubble ? <ChatTypingBubble /> : null}
       </div>
 
       <div className="shrink-0 border-t border-border bg-muted/30">
@@ -236,6 +346,15 @@ export function AiChatPanel({
                 setMessages([]);
                 setError(null);
                 setLastCitedFindingIds([]);
+
+                if (canUseConvex) {
+                  void upsertMessagesMutation({
+                    normalizedTarget: scanSnapshot.normalizedTarget,
+                    scanMode,
+                    convexScanId: scanSnapshot.convexScanId,
+                    messages: [],
+                  });
+                }
               }}
             >
               Reiniciar conversación
