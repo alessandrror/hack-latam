@@ -32,6 +32,11 @@ export default defineSchema({
     verifiedAt: v.optional(v.number()),
     lastCheckedAt: v.optional(v.number()),
     failureReason: v.optional(v.string()),
+    /** Set when Zavu accepted the domain-verified notification email */
+    verificationEmailSentAt: v.optional(v.number()),
+    verificationEmailMessageId: v.optional(v.string()),
+    verificationEmailLastAttemptAt: v.optional(v.number()),
+    verificationEmailLastError: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index("by_user", ["userId"])
