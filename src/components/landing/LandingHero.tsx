@@ -1,20 +1,47 @@
+"use client";
+
 import Link from "next/link";
+import { useLayoutEffect, useState } from "react";
 
 import { LandingHeroScanForm } from "@/components/landing/LandingHeroScanForm";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+type HeroMotionPhase = "pending" | "animate" | "skip";
+
 export function LandingHero() {
+  const [phase, setPhase] = useState<HeroMotionPhase>("pending");
+
+  useLayoutEffect(() => {
+    const id = requestAnimationFrame(() => {
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      setPhase(reduceMotion ? "skip" : "animate");
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const motionClass =
+    phase === "skip"
+      ? "hero-motion-skip"
+      : phase === "animate"
+        ? "hero-motion-ready"
+        : "";
+
   return (
     <section
-      className="relative mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-24"
+      className={cn(
+        "landing-hero-section relative isolate mx-auto max-w-5xl overflow-x-hidden px-4 py-16 sm:px-6 sm:py-24",
+        motionClass,
+      )}
       aria-labelledby="landing-hero-heading"
     >
       <div className="text-center">
         <Badge
           variant="outline"
-          className="inline-flex rounded-full border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-primary shadow-none"
+          className="hero-enter-target inline-flex rounded-full border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold uppercase tracking-[0.18em] text-primary shadow-none hero-stagger-1"
         >
           Superficie externa pasiva · PYME
         </Badge>
@@ -23,7 +50,8 @@ export function LandingHero() {
           className="mt-8 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-[clamp(2.25rem,6vw,3.75rem)] lg:leading-[1.08]"
         >
           ¿Qué se ve ya{" "}
-          <span className="text-primary">en público</span> sobre tu dominio?
+          <span className="landing-hero-accent-shimmer">en público</span>{" "}
+          sobre tu dominio?
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
           Te damos un instantáneo de señales que cualquier observador externo también
@@ -34,9 +62,11 @@ export function LandingHero() {
         </p>
       </div>
 
-      <LandingHeroScanForm />
+      <div className="hero-enter-target hero-stagger-2">
+        <LandingHeroScanForm />
+      </div>
 
-      <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+      <div className="hero-enter-target mt-8 flex flex-col items-center justify-center gap-3 hero-stagger-3 sm:flex-row sm:gap-4">
         <Link
           href="/scan"
           className={cn(

@@ -434,6 +434,69 @@ body {
   animation: roadmap-line-dash 3s ease-in-out infinite;
 }
 
+/* Landing hero — staggered entrances (LCP: keep h1 body copy fully opaque) */
+@keyframes hero-rise-soft {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-hero-accent-shimmer {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.hero-enter-target {
+  opacity: 0;
+  transform: translateY(0.75rem);
+}
+
+.landing-hero-section.hero-motion-skip .hero-enter-target {
+  opacity: 1;
+  transform: none;
+}
+
+.landing-hero-section.hero-motion-ready .hero-stagger-1 {
+  animation: hero-rise-soft 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.landing-hero-section.hero-motion-ready .hero-stagger-2 {
+  animation: hero-rise-soft 0.52s cubic-bezier(0.22, 1, 0.36, 1) 88ms forwards;
+}
+
+.landing-hero-section.hero-motion-ready .hero-stagger-3 {
+  animation: hero-rise-soft 0.52s cubic-bezier(0.22, 1, 0.36, 1) 176ms forwards;
+}
+
+.landing-hero-accent-shimmer {
+  color: var(--primary);
+}
+
+.landing-hero-section.hero-motion-ready .landing-hero-accent-shimmer {
+  background: linear-gradient(
+    105deg,
+    var(--primary) 0%,
+    var(--primary) 38%,
+    #38bdf8 50%,
+    var(--primary) 62%,
+    var(--primary) 100%
+  );
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: landing-hero-accent-shimmer 11s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -445,5 +508,18 @@ body {
 
   .feature-reveal {
     opacity: 1;
+  }
+
+  .landing-hero-section .hero-enter-target {
+    opacity: 1;
+    transform: none;
+  }
+
+  .landing-hero-section .landing-hero-accent-shimmer {
+    animation: none !important;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    color: var(--primary) !important;
   }
 }
