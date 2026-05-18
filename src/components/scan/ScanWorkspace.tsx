@@ -18,9 +18,13 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
+  clearChatMessages,
+  chatSessionStorageKey,
+} from "@/lib/ai/chat-session-storage";
+import {
   aggregateHostnamesFromFindings,
-  buildChecklistRows,
 } from "@/lib/dashboard/findings";
+import { buildInsightsRequestBody } from "@/lib/dashboard/insights-payload";
 import { classifyAndNormalizeTarget } from "@/lib/recon/normalize-target";
 import { extractApexFromNormalizedHost } from "@/lib/recon/extract-apex";
 import {
@@ -161,6 +165,16 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     [findingsForGrid],
   );
 
+  const scanSnapshot = useMemo(() => {
+    if (!result) return null;
+    return buildInsightsRequestBody({
+      result,
+      findings: findingsForGrid,
+      totalHostnames: hostAggregate.total,
+      hostnameSampleShownCount: hostAggregate.hostnames.length,
+    });
+  }, [findingsForGrid, hostAggregate.hostnames.length, hostAggregate.total, result]);
+
   const resetAi = useCallback(() => {
     setAiResult(null);
     setAiError(null);
@@ -224,6 +238,14 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
   async function runScan(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if (result?.normalizedTarget) {
+      clearChatMessages(
+        chatSessionStorageKey(
+          result.normalizedTarget,
+          result.mode ?? "deep",
+        ),
+      );
+    }
     setResult(null);
     resetAi();
     setConvexScanId(null);
@@ -301,7 +323,7 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
 
   const generateInsights = useCallback(
     async (opts?: { forceRefresh?: boolean; navigateToAi?: boolean }) => {
-      if (!result || loading) return;
+      if (!result || loading || !scanSnapshot) return;
       if (!isSignedIn) {
         setAiError(
           "Debes iniciar sesión para generar orientación con IA.",
@@ -311,50 +333,14 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
       setAiLoading(true);
       setAiError(null);
       try {
-        const checklistRowsBuilt = buildChecklistRows(findingsForGrid).map(
-          (r) => ({
-            id: r.id,
-            label: r.label,
-            status: r.status,
-            ...(r.detail ? { detail: r.detail } : {}),
-          }),
-        );
-
-        const body = {
-          normalizedTarget: result.normalizedTarget,
-          inputKind: result.inputKind,
-          scanMode: result.mode,
-          totalHostnames: hostAggregate.total,
-          hostnameSampleShownCount: hostAggregate.hostnames.length,
-          findings: findingsForGrid.map((f) => ({
-            id: f.id,
-            module: f.module,
-            severity: f.severity,
-            title: f.title,
-            explanation: f.explanation,
-          })),
-          checklistRows:
-            result.mode === "quick"
-              ? undefined
-              : checklistRowsBuilt.length > 0
-                ? checklistRowsBuilt
-                : undefined,
-          modules: (result.modules ?? []).map((m) => ({
-            name: m.name,
-            status: m.status,
-            ...(typeof m.durationMs === "number"
-              ? { durationMs: m.durationMs }
-              : {}),
-            ...(m.errorMessage ? { errorMessage: m.errorMessage } : {}),
-          })),
-          ...(convexScanId ? { convexScanId } : {}),
-          forceRefresh: Boolean(opts?.forceRefresh),
-        };
-
         const response = await fetch("/api/ai/insights", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify({
+            ...scanSnapshot,
+            ...(convexScanId ? { convexScanId } : {}),
+            forceRefresh: Boolean(opts?.forceRefresh),
+          }),
         });
         const payload: unknown = await response.json();
         if (!response.ok) {
@@ -384,14 +370,21 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
     },
     [
       convexScanId,
-      findingsForGrid,
-      hostAggregate.hostnames.length,
-      hostAggregate.total,
       isSignedIn,
       loading,
       result,
+      scanSnapshot,
     ],
   );
+
+  const handleFindingCitationClick = useCallback((findingId: string) => {
+    setActiveTab("findings");
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`finding-${findingId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, []);
 
   const displayTarget =
     result?.normalizedTarget?.trim() ||
@@ -479,6 +472,10 @@ export function ScanWorkspace({ initialTarget = "" }: ScanWorkspaceProps) {
           onGenerate={(opts) =>
             void generateInsights({ ...opts, navigateToAi: true })
           }
+          scanSnapshot={scanSnapshot}
+          isSignedIn={Boolean(isSignedIn)}
+          authLoaded={authLoaded}
+          onFindingCitationClick={handleFindingCitationClick}
         />
       );
     }
